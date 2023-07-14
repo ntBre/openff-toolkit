@@ -1,3 +1,4 @@
+#[allow(unused)]
 pub mod topology {
     pub mod molecule {
         use std::collections::HashMap;
@@ -263,7 +264,38 @@ pub mod topology {
         struct Bond {
             atom1: Atom,
             atom2: Atom,
+            bond_order: usize,
+            is_aromatic: bool,
+            fractional_bond_order: Option<f64>,
+            stereochemistry: Stereochemistry,
             atoms: Vec<Atom>,
+        }
+
+        impl Bond {
+            fn new(
+                atom1: Atom,
+                atom2: Atom,
+                bond_order: usize,
+                is_aromatic: bool,
+                fractional_bond_order: Option<f64>,
+                stereochemistry: Stereochemistry,
+                atoms: Vec<Atom>,
+            ) -> Self {
+                let mut ret = Self {
+                    atom1,
+                    atom2,
+                    bond_order,
+                    is_aromatic,
+                    fractional_bond_order,
+                    stereochemistry,
+                    atoms,
+                };
+                ret.atom1.add_bond(ret.clone());
+                ret.atom2.add_bond(ret.clone());
+                ret
+            }
         }
     }
 }
+
+pub mod smirnoff;
