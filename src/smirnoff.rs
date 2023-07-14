@@ -358,6 +358,7 @@ macro_rules! impl_parameter {
 
 impl_parameter!(Bond, Angle, Proper, Improper);
 
+#[derive(Default)]
 struct Match {
     parameter_type: String,
     environment_match: ChemicalEnvironment,
@@ -387,18 +388,21 @@ impl ParameterHandler {
 
     fn find_matches(&self, entity: Topology) -> HashMap<Vec<usize>, Match> {
         let mut matches = HashMap::new();
-        for parameter in self.inner {
+        for parameter in &self.inner {
             let mut matches_for_this_type = HashMap::new();
             for environment_match in
                 entity.chemical_environment_matches(parameter.smirks())
             {
-                let handler_match =
-                    Match::new(parameter.typ().to_owned(), environment_match);
-                matches_for_this_type
-                    [&environment_match.topology_atom_indices] = handler_match;
+                let handler_match = Match::new(
+                    parameter.typ().to_owned(),
+                    environment_match.clone(),
+                );
+                *matches_for_this_type
+                    .entry(environment_match.topology_atom_indices.clone())
+                    .or_default() = handler_match;
             }
 
-            matches.extend(matches_for_this_type.into_iter());
+            matches.extend(matches_for_this_type);
         }
 
         matches
@@ -467,7 +471,7 @@ impl ForceField {
     pub fn label_molecules(
         &self,
         topology: Topology,
-    ) -> Vec<HashMap<String, HashMap<String, String>>> {
+    ) -> Vec<HashMap<String, HashMap<Vec<usize>, String>>> {
         let mut molecule_labels = Vec::new();
 
         for molecule in topology.molecules {
@@ -475,13 +479,17 @@ impl ForceField {
             let mut current_molecule_labels = HashMap::new();
 
             for (tag, parameter_handler) in self.parameter_handlers() {
-                let matches = parameter_handler.find_matches(top_mol);
+                let matches = parameter_handler.find_matches(top_mol.clone());
                 let mut parameter_matches = HashMap::new();
-                for match_ in matches {
-                    parameter_matches[match_] = matches[match_].parameter_type;
+                for match_ in matches.keys() {
+                    *parameter_matches
+                        .entry(match_.clone())
+                        .or_insert(String::new()) =
+                        matches[match_].parameter_type.clone();
                 }
 
-                current_molecule_labels[tag] = parameter_matches;
+                *current_molecule_labels.entry(tag.to_owned()).or_default() =
+                    parameter_matches;
             }
 
             molecule_labels.push(current_molecule_labels);

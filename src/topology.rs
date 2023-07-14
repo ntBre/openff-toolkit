@@ -2,10 +2,12 @@ use self::molecule::Molecule;
 
 pub mod molecule;
 
+#[derive(Clone, Default)]
 pub struct ChemicalEnvironment {
     pub topology_atom_indices: Vec<usize>,
 }
 
+#[derive(Clone)]
 pub struct Topology {
     pub molecules: Vec<Molecule>,
 }

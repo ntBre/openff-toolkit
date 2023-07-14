@@ -27,14 +27,15 @@ mod tests {
     fn label_and_tag_ids(
         (record, molecule): (TorsionDriveRecord, Molecule),
         force_field: &ForceField,
-        parameter_types: &impl IntoIterator<Item = String>,
+        parameter_types: impl IntoIterator<Item = String>,
     ) -> HashSet<(String, String, usize)> {
-        let mol_labels = force_field.label_molecules(molecule.to_topology())[0];
+        let mol_labels =
+            &force_field.label_molecules(molecule.clone().to_topology())[0];
 
         let mut parameter_ids = HashSet::new();
 
         for parameter_type in parameter_types.into_iter() {
-            let parameter_labels = mol_labels[parameter_type];
+            let parameter_labels = mol_labels[&parameter_type].clone();
             let n_heavy_atoms = molecule
                 .atoms
                 .iter()
@@ -42,7 +43,11 @@ mod tests {
                 .count();
 
             for (indices, parameter) in parameter_labels {
-                parameter_ids.insert((parameter.id, record.id, n_heavy_atoms));
+                parameter_ids.insert((
+                    parameter,
+                    record.id.clone(),
+                    n_heavy_atoms,
+                ));
             }
         }
 
@@ -52,12 +57,12 @@ mod tests {
     fn get_parameter_distribution(
         dataset: TorsionDriveResultCollection,
         force_field: &ForceField,
-        parameter_types: &impl IntoIterator<Item = String>,
+        parameter_types: impl IntoIterator<Item = String> + Clone,
     ) -> HashMap<String, usize> {
         let mut ret = HashMap::new();
         for record in dataset.to_records() {
             let parameter_ids =
-                label_and_tag_ids(record, force_field, parameter_types);
+                label_and_tag_ids(record, force_field, parameter_types.clone());
             for (parameter_id, record_id, n_heavy_atoms) in parameter_ids {
                 *ret.entry(parameter_id).or_insert(0) += 1;
             }
@@ -66,15 +71,21 @@ mod tests {
     }
 
     // TODO return some kind of Parameters type
-    fn select_parameters(
+    fn select_parameters<I>(
         dataset: TorsionDriveResultCollection,
         force_field: &ForceField,
-        parameter_types: impl IntoIterator<Item = String>,
-    ) -> HashMap<String, Vec<String>> {
+        parameter_types: I,
+    ) -> HashMap<String, Vec<String>>
+    where
+        I: IntoIterator<Item = String> + Clone,
+    {
         // TODO this is an optional argument in the python version
         let min_coverage = 5;
-        let coverage =
-            get_parameter_distribution(dataset, force_field, &parameter_types);
+        let coverage = get_parameter_distribution(
+            dataset,
+            force_field,
+            parameter_types.clone(),
+        );
 
         let mut ret = HashMap::new();
         for parameter_type in parameter_types.into_iter() {
@@ -84,8 +95,7 @@ mod tests {
                 if *count < min_coverage {
                     continue;
                 }
-                let Some(parameter) =
-                    handler.get_parameter_by_id(&parameter_id)
+                let Some(parameter) = handler.get_parameter_by_id(parameter_id)
                 else {
                     continue;
                 };
