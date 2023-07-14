@@ -1,36 +1,43 @@
-use std::{error::Error, fs::read_to_string};
+use std::{collections::HashMap, error::Error, fs::read_to_string};
 
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+use crate::topology::{self, ChemicalEnvironment, Topology};
+
+#[derive(Clone, Debug, Deserialize)]
 struct Constraint {
     #[serde(rename = "@smirks")]
     smirks: String,
+
     #[serde(rename = "@id")]
     id: String,
+
     #[serde(rename = "@distance")]
-    distance: String, // TODO float + units ?
+    distance: Option<String>, // TODO float + units ?
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Constraints {
     #[serde(rename = "@version")]
     version: String,
+
     #[serde(default, rename = "Constraint")]
     constraints: Vec<Constraint>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Bond {
     #[serde(rename = "@smirks")]
     smirks: String,
+
     #[serde(rename = "@id")]
     id: String,
+
     #[serde(rename = "@length")]
     length: String, // TODO float + units ?
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Bonds {
     #[serde(rename = "@version")]
     version: String,
@@ -48,27 +55,31 @@ struct Bonds {
     bonds: Vec<Bond>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Angle {
     #[serde(rename = "@smirks")]
     smirks: String,
+
     #[serde(rename = "@id")]
     id: String,
+
     #[serde(rename = "@angle")]
     angle: String, // TODO float + units ?
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Angles {
     #[serde(rename = "@version")]
     version: String,
+
     #[serde(rename = "@potential")]
     potential: String,
+
     #[serde(default, rename = "Angle")]
     angles: Vec<Angle>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Proper {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -114,7 +125,7 @@ struct Proper {
     idivf3: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct ProperTorsions {
     #[serde(rename = "@version")]
     version: String,
@@ -135,7 +146,7 @@ struct ProperTorsions {
     proper_torsions: Vec<Proper>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Improper {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -154,7 +165,7 @@ struct Improper {
     k1: String, // TODO float + units ?
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct ImproperTorsions {
     #[serde(rename = "@version")]
     version: String,
@@ -169,7 +180,7 @@ struct ImproperTorsions {
     improper_torsions: Vec<Improper>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Atom {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -184,7 +195,7 @@ struct Atom {
     rmin_half: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Vdw {
     #[serde(rename = "@version")]
     version: String,
@@ -220,7 +231,7 @@ struct Vdw {
     atoms: Vec<Atom>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Electrostatics {
     #[serde(rename = "@version")]
     version: String,
@@ -244,10 +255,10 @@ struct Electrostatics {
     switch_width: String,
 
     #[serde(rename = "@method")]
-    method: String,
+    method: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct LibraryCharge {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -259,7 +270,7 @@ struct LibraryCharge {
     charge1: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct LibraryCharges {
     #[serde(rename = "@version")]
     version: String,
@@ -268,14 +279,14 @@ struct LibraryCharges {
     library_charges: Vec<LibraryCharge>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct ToolkitAM1BCC {
     #[serde(rename = "@version")]
     version: String,
 }
 
 /// A SMIRNOFF force field
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct ForceField {
     #[serde(rename = "@version")]
     version: String,
@@ -317,11 +328,166 @@ pub struct ForceField {
     toolkit_am1_bcc: ToolkitAM1BCC,
 }
 
+pub trait Parameter {
+    fn id(&self) -> &String;
+    fn smirks(&self) -> &String;
+    fn typ(&self) -> &'static str;
+}
+
+/// implement the required getters for `Parameter`, assuming the corresponding
+/// fields are present
+macro_rules! impl_parameter {
+    ($($type:ty $(,)*)*) => {
+	$(
+	    impl Parameter for $type {
+		fn id(&self) -> &String {
+		    &self.id
+		}
+
+		fn smirks(&self) -> &String {
+		    &self.smirks
+		}
+
+		fn typ(&self) -> &'static str {
+		    stringify!($type)
+		}
+	    }
+	)*
+    }
+}
+
+impl_parameter!(Bond, Angle, Proper, Improper);
+
+struct Match {
+    parameter_type: String,
+    environment_match: ChemicalEnvironment,
+}
+
+impl Match {
+    fn new(
+        parameter_type: String,
+        environment_match: ChemicalEnvironment,
+    ) -> Self {
+        Self {
+            parameter_type,
+            environment_match,
+        }
+    }
+}
+
+pub struct ParameterHandler {
+    inner: Vec<Box<dyn Parameter>>,
+}
+
+impl ParameterHandler {
+    #[allow(clippy::borrowed_box)]
+    pub fn get_parameter_by_id(&self, id: &str) -> Option<&Box<dyn Parameter>> {
+        self.inner.iter().find(|&p| p.id() == id)
+    }
+
+    fn find_matches(&self, entity: Topology) -> HashMap<Vec<usize>, Match> {
+        let mut matches = HashMap::new();
+        for parameter in self.inner {
+            let mut matches_for_this_type = HashMap::new();
+            for environment_match in
+                entity.chemical_environment_matches(parameter.smirks())
+            {
+                let handler_match =
+                    Match::new(parameter.typ().to_owned(), environment_match);
+                matches_for_this_type
+                    [&environment_match.topology_atom_indices] = handler_match;
+            }
+
+            matches.extend(matches_for_this_type.into_iter());
+        }
+
+        matches
+    }
+}
+
 impl ForceField {
     pub fn load(filename: &str) -> Result<Self, Box<dyn Error>> {
         let contents = read_to_string(filename)?;
         let ff: Self = quick_xml::de::from_str(&contents)?;
         Ok(ff)
+    }
+
+    // TODO this should take an enum not string
+    pub fn get_parameter_handler(
+        &self,
+        parameter_type: &str,
+    ) -> ParameterHandler {
+        let mut inner: Vec<Box<dyn Parameter>> = Vec::new();
+        match parameter_type {
+            "Bonds" => {
+                for b in self.bonds.bonds.iter().cloned().map(Box::new) {
+                    inner.push(b);
+                }
+            }
+            "Angles" => {
+                for b in self.angles.angles.iter().cloned().map(Box::new) {
+                    inner.push(b);
+                }
+            }
+            "ProperTorsions" => {
+                for p in self
+                    .proper_torsions
+                    .proper_torsions
+                    .iter()
+                    .cloned()
+                    .map(Box::new)
+                {
+                    inner.push(p);
+                }
+            }
+            "ImproperTorsions" => {
+                for b in self
+                    .improper_torsions
+                    .improper_torsions
+                    .iter()
+                    .cloned()
+                    .map(Box::new)
+                {
+                    inner.push(b);
+                }
+            }
+            _ => panic!("unrecognized parameter_type: {parameter_type}"),
+        }
+        ParameterHandler { inner }
+    }
+
+    fn parameter_handlers(&self) -> Vec<(&'static str, ParameterHandler)> {
+        let mut ret = Vec::new();
+        for typ in ["Bonds", "Angles", "ProperTorsions", "ImproperTorsions"] {
+            ret.push((typ, self.get_parameter_handler(typ)))
+        }
+        ret
+    }
+
+    pub fn label_molecules(
+        &self,
+        topology: Topology,
+    ) -> Vec<HashMap<String, HashMap<String, String>>> {
+        let mut molecule_labels = Vec::new();
+
+        for molecule in topology.molecules {
+            let top_mol = Topology::from_molecules(vec![molecule]);
+            let mut current_molecule_labels = HashMap::new();
+
+            for (tag, parameter_handler) in self.parameter_handlers() {
+                let matches = parameter_handler.find_matches(top_mol);
+                let mut parameter_matches = HashMap::new();
+                for match_ in matches {
+                    parameter_matches[match_] = matches[match_].parameter_type;
+                }
+
+                current_molecule_labels[tag] = parameter_matches;
+            }
+
+            molecule_labels.push(current_molecule_labels);
+        }
+
+        molecule_labels
     }
 }
 
