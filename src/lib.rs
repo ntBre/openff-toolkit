@@ -1,4 +1,4 @@
-#[allow(unused)]
-pub mod topology;
+#![allow(unused)]
 
 pub mod smirnoff;
+pub mod topology;
