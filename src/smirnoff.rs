@@ -171,11 +171,117 @@ struct ImproperTorsions {
     improper_torsions: Vec<Improper>,
 }
 
+#[derive(Debug, Deserialize)]
+struct Atom {
+    #[serde(rename = "@smirks")]
+    smirks: String,
+
+    #[serde(rename = "@id")]
+    id: String,
+
+    #[serde(rename = "@epsilon")]
+    epsilon: String,
+
+    #[serde(rename = "@rmin_half")]
+    rmin_half: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Vdw {
+    #[serde(rename = "@version")]
+    version: String,
+
+    #[serde(rename = "@potential")]
+    potential: String,
+
+    #[serde(rename = "@combining_rules")]
+    combining_rules: String,
+
+    #[serde(rename = "@scale12")]
+    scale12: String,
+
+    #[serde(rename = "@scale13")]
+    scale13: String,
+
+    #[serde(rename = "@scale14")]
+    scale14: String,
+
+    #[serde(rename = "@scale15")]
+    scale15: String,
+
+    #[serde(rename = "@cutoff")]
+    cutoff: String,
+
+    #[serde(rename = "@switch_width")]
+    switch_width: String,
+
+    #[serde(rename = "@method")]
+    method: String,
+
+    #[serde(default, rename = "Atom")]
+    atoms: Vec<Atom>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Electrostatics {
+    #[serde(rename = "@version")]
+    version: String,
+
+    #[serde(rename = "@scale12")]
+    scale12: String,
+
+    #[serde(rename = "@scale13")]
+    scale13: String,
+
+    #[serde(rename = "@scale14")]
+    scale14: String,
+
+    #[serde(rename = "@scale15")]
+    scale15: String,
+
+    #[serde(rename = "@cutoff")]
+    cutoff: String,
+
+    #[serde(rename = "@switch_width")]
+    switch_width: String,
+
+    #[serde(rename = "@method")]
+    method: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct LibraryCharge {
+    #[serde(rename = "@smirks")]
+    smirks: String,
+
+    #[serde(rename = "@id")]
+    id: String,
+
+    #[serde(rename = "@charge1")]
+    charge1: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct LibraryCharges {
+    #[serde(rename = "@version")]
+    version: String,
+
+    #[serde(rename = "LibraryCharge")]
+    library_charges: Vec<LibraryCharge>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ToolkitAM1BCC {
+    #[serde(rename = "@version")]
+    version: String,
+}
+
 /// A SMIRNOFF force field
 #[derive(Debug, Deserialize)]
 pub struct ForceField {
     #[serde(rename = "@version")]
     version: String,
+
     #[serde(rename = "@aromaticity_model")]
     aromaticity_model: String,
 
@@ -199,6 +305,18 @@ pub struct ForceField {
 
     #[serde(rename = "ImproperTorsions")]
     improper_torsions: ImproperTorsions,
+
+    #[serde(rename = "vdW")]
+    vdw: Vdw,
+
+    #[serde(rename = "Electrostatics")]
+    electrostatics: Electrostatics,
+
+    #[serde(rename = "LibraryCharges")]
+    library_charges: LibraryCharges,
+
+    #[serde(rename = "ToolkitAM1BCC")]
+    toolkit_am1_bcc: ToolkitAM1BCC,
 }
 
 impl ForceField {
@@ -215,10 +333,7 @@ mod tests {
 
     #[test]
     fn load() {
-        let got = ForceField::load(
-            "/home/brent/omsf/clone/sage-2.1.0/sage-2.1.0rc.offxml",
-        )
-        .unwrap();
+        let got = ForceField::load("testfiles/sage-2.1.0rc.offxml").unwrap();
         dbg!(got);
     }
 }
