@@ -334,6 +334,5 @@ mod tests {
     #[test]
     fn load() {
         let got = ForceField::load("testfiles/sage-2.1.0rc.offxml").unwrap();
-        dbg!(got);
     }
 }
