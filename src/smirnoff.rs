@@ -2,7 +2,9 @@ use std::{collections::HashMap, error::Error, fs::read_to_string};
 
 use serde::Deserialize;
 
-use crate::topology::{self, ChemicalEnvironment, Topology};
+use crate::topology::{
+    self, ChemicalEnvironment, ChemicalEnvironmentMatch, Topology,
+};
 
 #[derive(Clone, Debug, Deserialize)]
 struct Constraint {
@@ -358,16 +360,15 @@ macro_rules! impl_parameter {
 
 impl_parameter!(Bond, Angle, Proper, Improper);
 
-#[derive(Default)]
 struct Match {
     parameter_type: String,
-    environment_match: ChemicalEnvironment,
+    environment_match: ChemicalEnvironmentMatch,
 }
 
 impl Match {
     fn new(
         parameter_type: String,
-        environment_match: ChemicalEnvironment,
+        environment_match: ChemicalEnvironmentMatch,
     ) -> Self {
         Self {
             parameter_type,
@@ -397,9 +398,10 @@ impl ParameterHandler {
                     parameter.typ().to_owned(),
                     environment_match.clone(),
                 );
-                *matches_for_this_type
-                    .entry(environment_match.topology_atom_indices.clone())
-                    .or_default() = handler_match;
+                matches_for_this_type.insert(
+                    environment_match.topology_atom_indices.clone(),
+                    handler_match,
+                );
             }
 
             matches.extend(matches_for_this_type);

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::Topology;
+use super::{ChemicalEnvironmentMatch, Topology};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Stereochemistry {
@@ -23,6 +23,20 @@ impl Molecule {
 
     pub fn to_topology(self) -> Topology {
         Topology::from_molecules(vec![self])
+    }
+
+    pub fn are_isomorphic(
+        &self,
+        mol2: &Molecule,
+    ) -> (bool, HashMap<usize, usize>) {
+        todo!();
+    }
+
+    pub(crate) fn chemical_environment_matches(
+        &self,
+        smarts: &str,
+    ) -> Vec<ChemicalEnvironmentMatch> {
+        todo!()
     }
 }
 
