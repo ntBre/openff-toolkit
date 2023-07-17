@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use rdkit::ROMol;
+
 use super::{ChemicalEnvironmentMatch, Topology};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -36,6 +38,12 @@ impl Molecule {
         &self,
         smarts: &str,
     ) -> Vec<ChemicalEnvironmentMatch> {
+        let qmol = ROMol::from_smarts(smarts).unwrap_or_else(|e| {
+            panic!(
+                "RDKit could not parse the SMIRKS string '{}' with {e}",
+                smarts
+            )
+        });
         todo!("smarts: `{}`", smarts)
     }
 }
