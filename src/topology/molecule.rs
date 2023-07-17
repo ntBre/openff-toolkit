@@ -36,7 +36,7 @@ impl Molecule {
         &self,
         smarts: &str,
     ) -> Vec<ChemicalEnvironmentMatch> {
-        todo!()
+        todo!("smarts: `{}`", smarts)
     }
 }
 

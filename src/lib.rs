@@ -9,6 +9,9 @@ pub mod qcsubmit;
 // TODO this is its own package
 pub mod qcportal;
 
+// TODO another own package
+pub mod rdkit;
+
 #[cfg(test)]
 mod tests {
     use std::{
