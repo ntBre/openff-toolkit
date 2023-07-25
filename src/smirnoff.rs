@@ -60,6 +60,28 @@ struct Bonds {
     bonds: Vec<Bond>,
 }
 
+/// thanks to https://stackoverflow.com/a/73463595/12935407 for finally solving
+/// this
+impl<'a> IntoIterator for &'a Bonds {
+    type Item = <&'a Vec<Bond> as IntoIterator>::Item;
+
+    type IntoIter = <&'a Vec<Bond> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.bonds).into_iter()
+    }
+}
+
+impl IntoIterator for Bonds {
+    type Item = Bond;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.bonds.into_iter()
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
 struct Angle {
     #[serde(rename = "@smirks")]
