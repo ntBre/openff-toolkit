@@ -37,6 +37,9 @@ struct Bond {
 
     #[serde(rename = "@length")]
     length: String, // TODO float + units ?
+
+    #[serde(rename = "@parameterize")]
+    parameterize: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -67,6 +70,9 @@ struct Angle {
 
     #[serde(rename = "@angle")]
     angle: String, // TODO float + units ?
+
+    #[serde(rename = "@parameterize")]
+    parameterize: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -125,6 +131,9 @@ struct Proper {
 
     #[serde(rename = "@idivf3")]
     idivf3: Option<String>,
+
+    #[serde(rename = "@parameterize")]
+    parameterize: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -508,5 +517,10 @@ mod tests {
     #[test]
     fn load() {
         let got = ForceField::load("testfiles/sage-2.1.0rc.offxml").unwrap();
+    }
+
+    #[test]
+    fn load_fb() {
+        let got = ForceField::load("testfiles/force-field.offxml").unwrap();
     }
 }
