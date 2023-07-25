@@ -1,10 +1,54 @@
-use std::{collections::HashMap, error::Error, fs::read_to_string};
+use std::{
+    collections::HashMap, error::Error, fmt::Display, fs::read_to_string,
+    path::Path, str::FromStr, string::ParseError,
+};
 
 use serde::Deserialize;
 
 use crate::topology::{
     self, ChemicalEnvironment, ChemicalEnvironmentMatch, Topology,
 };
+
+#[derive(Clone, Debug, Deserialize)]
+pub enum Unit {
+    Unit(String),
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(try_from = "String")]
+pub struct Quantity {
+    pub value: f64,
+    pub unit: Unit,
+}
+
+#[derive(Debug)]
+struct QuantityError;
+
+impl Error for QuantityError {}
+
+impl Display for QuantityError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "QuantityError")
+    }
+}
+
+impl TryFrom<String> for Quantity {
+    type Error = Box<dyn Error>;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        // should collect into a vector like:
+        //
+        // ["430.25933261181706",
+        // "*", "kilocalorie_per_mole", "**", "1", "*", "angstrom", "**", "-2"]
+        let mut split = s.split_ascii_whitespace();
+        let value = split.next().ok_or(QuantityError)?.parse()?;
+        let unit = String::from_iter(split);
+        Ok(Self {
+            value,
+            unit: Unit::Unit(unit),
+        })
+    }
+}
 
 #[derive(Clone, Debug, Deserialize)]
 struct Constraint {
@@ -15,7 +59,7 @@ struct Constraint {
     id: String,
 
     #[serde(rename = "@distance")]
-    distance: Option<String>, // TODO float + units ?
+    distance: Option<Quantity>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -28,22 +72,25 @@ struct Constraints {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct Bond {
+pub struct Bond {
     #[serde(rename = "@smirks")]
-    smirks: String,
+    pub smirks: String,
+
+    #[serde(rename = "@k")]
+    pub k: Quantity,
 
     #[serde(rename = "@id")]
-    id: String,
+    pub id: String,
 
     #[serde(rename = "@length")]
-    length: String, // TODO float + units ?
+    pub length: Quantity,
 
     #[serde(rename = "@parameterize")]
-    parameterize: Option<String>,
+    pub parameterize: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct Bonds {
+pub struct Bonds {
     #[serde(rename = "@version")]
     version: String,
 
@@ -91,14 +138,14 @@ struct Angle {
     id: String,
 
     #[serde(rename = "@angle")]
-    angle: String, // TODO float + units ?
+    angle: Quantity,
 
     #[serde(rename = "@parameterize")]
     parameterize: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct Angles {
+pub struct Angles {
     #[serde(rename = "@version")]
     version: String,
 
@@ -125,7 +172,7 @@ struct Proper {
     phase1: String,
 
     #[serde(rename = "@k1")]
-    k1: String, // TODO float + units ?
+    k1: Quantity,
 
     #[serde(rename = "@idivf1")]
     idivf1: String,
@@ -137,7 +184,7 @@ struct Proper {
     phase2: Option<String>,
 
     #[serde(rename = "@k2")]
-    k2: Option<String>, // TODO float + units ?
+    k2: Option<Quantity>,
 
     #[serde(rename = "@idivf2")]
     idivf2: Option<String>,
@@ -149,7 +196,7 @@ struct Proper {
     phase3: Option<String>,
 
     #[serde(rename = "@k3")]
-    k3: Option<String>, // TODO float + units ?
+    k3: Option<Quantity>,
 
     #[serde(rename = "@idivf3")]
     idivf3: Option<String>,
@@ -159,7 +206,7 @@ struct Proper {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct ProperTorsions {
+pub struct ProperTorsions {
     #[serde(rename = "@version")]
     version: String,
 
@@ -195,7 +242,7 @@ struct Improper {
     phase1: String,
 
     #[serde(rename = "@k1")]
-    k1: String, // TODO float + units ?
+    k1: Quantity,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -337,13 +384,13 @@ pub struct ForceField {
     constraints: Constraints,
 
     #[serde(rename = "Bonds")]
-    bonds: Bonds,
+    pub bonds: Bonds,
 
     #[serde(rename = "Angles")]
-    angles: Angles,
+    pub angles: Angles,
 
     #[serde(rename = "ProperTorsions")]
-    proper_torsions: ProperTorsions,
+    pub proper_torsions: ProperTorsions,
 
     #[serde(rename = "ImproperTorsions")]
     improper_torsions: ImproperTorsions,
@@ -443,7 +490,7 @@ impl ParameterHandler {
 }
 
 impl ForceField {
-    pub fn load(filename: &str) -> Result<Self, Box<dyn Error>> {
+    pub fn load(filename: impl AsRef<Path>) -> Result<Self, Box<dyn Error>> {
         let contents = read_to_string(filename)?;
         let ff: Self = quick_xml::de::from_str(&contents)?;
         Ok(ff)
