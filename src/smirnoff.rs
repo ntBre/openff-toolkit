@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap, error::Error, fmt::Display, fs::read_to_string,
-    path::Path, str::FromStr, string::ParseError,
+    ops::Index, path::Path, str::FromStr, string::ParseError,
 };
 
 use serde::Deserialize;
@@ -8,6 +8,10 @@ use serde::Deserialize;
 use crate::topology::{
     self, ChemicalEnvironment, ChemicalEnvironmentMatch, Topology,
 };
+
+use self::bonds::Bond;
+
+mod bonds;
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum Unit {
@@ -72,76 +76,31 @@ struct Constraints {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-pub struct Bond {
-    #[serde(rename = "@smirks")]
-    pub smirks: String,
-
-    #[serde(rename = "@k")]
-    pub k: Quantity,
-
-    #[serde(rename = "@id")]
-    pub id: String,
-
-    #[serde(rename = "@length")]
-    pub length: Quantity,
-
-    #[serde(rename = "@parameterize")]
-    pub parameterize: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Bonds {
-    #[serde(rename = "@version")]
-    version: String,
-
-    #[serde(rename = "@potential")]
-    potential: String,
-
-    #[serde(rename = "@fractional_bondorder_method")]
-    fractional_bondorder_method: String,
-
-    #[serde(rename = "@fractional_bondorder_interpolation")]
-    fractional_bondorder_interpolation: String,
-
-    #[serde(default, rename = "Bond")]
-    bonds: Vec<Bond>,
-}
-
-/// thanks to https://stackoverflow.com/a/73463595/12935407 for finally solving
-/// this
-impl<'a> IntoIterator for &'a Bonds {
-    type Item = <&'a Vec<Bond> as IntoIterator>::Item;
-
-    type IntoIter = <&'a Vec<Bond> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        (&self.bonds).into_iter()
-    }
-}
-
-impl IntoIterator for Bonds {
-    type Item = Bond;
-
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.bonds.into_iter()
-    }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct Angle {
+pub struct Angle {
     #[serde(rename = "@smirks")]
     smirks: String,
 
     #[serde(rename = "@id")]
     id: String,
 
+    #[serde(rename = "@k")]
+    pub k: Quantity,
+
     #[serde(rename = "@angle")]
-    angle: Quantity,
+    pub angle: Quantity,
 
     #[serde(rename = "@parameterize")]
-    parameterize: Option<String>,
+    pub parameterize: Option<String>,
+}
+
+impl Angle {
+    pub fn as_hash(&self, key: &str) -> Option<&Quantity> {
+        match key {
+            "angle" => Some(&self.angle),
+            "k" => Some(&self.k),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -156,8 +115,26 @@ pub struct Angles {
     angles: Vec<Angle>,
 }
 
+impl Index<usize> for Angles {
+    type Output = Angle;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.angles[index]
+    }
+}
+
+impl<'a> IntoIterator for &'a Angles {
+    type Item = <&'a Vec<Angle> as IntoIterator>::Item;
+
+    type IntoIter = <&'a Vec<Angle> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.angles.iter()
+    }
+}
+
 #[derive(Clone, Debug, Deserialize)]
-struct Proper {
+pub struct Proper {
     #[serde(rename = "@smirks")]
     smirks: String,
 
@@ -172,7 +149,7 @@ struct Proper {
     phase1: String,
 
     #[serde(rename = "@k1")]
-    k1: Quantity,
+    pub k1: Quantity,
 
     #[serde(rename = "@idivf1")]
     idivf1: String,
@@ -184,7 +161,7 @@ struct Proper {
     phase2: Option<String>,
 
     #[serde(rename = "@k2")]
-    k2: Option<Quantity>,
+    pub k2: Option<Quantity>,
 
     #[serde(rename = "@idivf2")]
     idivf2: Option<String>,
@@ -196,13 +173,36 @@ struct Proper {
     phase3: Option<String>,
 
     #[serde(rename = "@k3")]
-    k3: Option<Quantity>,
+    pub k3: Option<Quantity>,
 
     #[serde(rename = "@idivf3")]
     idivf3: Option<String>,
 
+    #[serde(rename = "@k4")]
+    pub k4: Option<Quantity>,
+
+    #[serde(rename = "@k5")]
+    pub k5: Option<Quantity>,
+
+    #[serde(rename = "@k6")]
+    pub k6: Option<Quantity>,
+
     #[serde(rename = "@parameterize")]
-    parameterize: Option<String>,
+    pub parameterize: Option<String>,
+}
+
+impl Proper {
+    pub fn as_hash(&self, key: &str) -> Option<&Quantity> {
+        match key {
+            "k1" => Some(&self.k1),
+            "k2" => self.k2.as_ref(),
+            "k3" => self.k3.as_ref(),
+            "k4" => self.k4.as_ref(),
+            "k5" => self.k5.as_ref(),
+            "k6" => self.k6.as_ref(),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -224,6 +224,24 @@ pub struct ProperTorsions {
 
     #[serde(default, rename = "Proper")]
     proper_torsions: Vec<Proper>,
+}
+
+impl<'a> IntoIterator for &'a ProperTorsions {
+    type Item = <&'a Vec<Proper> as IntoIterator>::Item;
+
+    type IntoIter = <&'a Vec<Proper> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.proper_torsions.iter()
+    }
+}
+
+impl Index<usize> for ProperTorsions {
+    type Output = Proper;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.proper_torsions[index]
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -384,7 +402,7 @@ pub struct ForceField {
     constraints: Constraints,
 
     #[serde(rename = "Bonds")]
-    pub bonds: Bonds,
+    pub bonds: bonds::Bonds,
 
     #[serde(rename = "Angles")]
     pub angles: Angles,
