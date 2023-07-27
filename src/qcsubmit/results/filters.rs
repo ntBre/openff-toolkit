@@ -2,12 +2,17 @@ use std::{collections::HashMap, marker::PhantomData};
 
 use serde::{
     de::{IgnoredAny, Visitor},
-    Deserialize, Serialize,
+    ser::{SerializeMap, SerializeSeq},
+    Deserialize, Serialize, Serializer,
 };
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
-pub struct Filters {
-    inner: Vec<Filter>,
+#[derive(Clone, Debug, PartialEq)]
+pub struct Filters(Vec<Filter>);
+
+impl Filters {
+    fn new() -> Self {
+        Self(Vec::new())
+    }
 }
 
 struct FiltersVisitor;
@@ -26,9 +31,7 @@ impl<'de> Visitor<'de> for FiltersVisitor {
     where
         A: serde::de::MapAccess<'de>,
     {
-        let mut map = Filters {
-            inner: Vec::with_capacity(access.size_hint().unwrap_or(0)),
-        };
+        let mut map = Filters::new();
 
         while let Some(key) = access.next_key::<String>()? {
             let key =
@@ -77,12 +80,10 @@ impl<'de> Visitor<'de> for FiltersVisitor {
                 }
                 _ => {
                     let _: IgnoredAny = access.next_value()?;
-                    Filter::Misc {
-                        name: key.to_owned(),
-                    }
+                    Filter::Misc(key.to_owned())
                 }
             };
-            map.inner.push(filter);
+            map.0.push(filter);
         }
 
         Ok(map)
@@ -98,7 +99,47 @@ impl<'de> Deserialize<'de> for Filters {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+impl Serialize for Filters {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+        for e in &self.0 {
+            match e {
+                Filter::HydrogenBond { method } => map.serialize_entry(
+                    "HydrogenBondFilter",
+                    &HashMap::from([("method", method)]),
+                )?,
+                Filter::RecordStatus { status } => map.serialize_entry(
+                    "RecordStatusFilter",
+                    &HashMap::from([("status", status)]),
+                )?,
+                Filter::Connectivity { tolerance } => map.serialize_entry(
+                    "ConnectivityFilter",
+                    &HashMap::from([("tolerance", tolerance)]),
+                )?,
+                Filter::UnperceivableStereo { toolkits } => map
+                    .serialize_entry(
+                        "UnperceivableStereoFilter",
+                        &HashMap::from([("toolkits", toolkits)]),
+                    )?,
+                Filter::Element { allowed_elements } => map.serialize_entry(
+                    "ElementFilter",
+                    &HashMap::from([("allowed_elements", allowed_elements)]),
+                )?,
+                Filter::Misc(name) => map
+                    .serialize_entry::<_, HashMap<(), ()>>(
+                        name,
+                        &HashMap::from([]),
+                    )?,
+            }
+        }
+        map.end()
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 pub enum Filter {
     HydrogenBond {
         method: String,
@@ -116,7 +157,5 @@ pub enum Filter {
         allowed_elements: Vec<String>,
     },
     /// Catch-all for filters that we don't provide
-    Misc {
-        name: String,
-    },
+    Misc(String),
 }
