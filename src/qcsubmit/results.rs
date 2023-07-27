@@ -1,14 +1,24 @@
 use std::{collections::HashMap, error::Error, fs::read_to_string, path::Path};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     qcportal::models::TorsionDriveRecord, smirnoff::ForceField,
     topology::molecule::Molecule,
 };
 
-#[derive(Clone, Debug, Deserialize)]
-struct Entry {
+use self::filters::Filters;
+
+pub mod filters;
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Provenance {
+    #[serde(rename = "applied-filters")]
+    applied_filters: Filters,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Entry {
     #[serde(rename = "type")]
     typ: String,
 
@@ -19,9 +29,19 @@ struct Entry {
     inchi_key: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+impl Entry {
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(&self)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TorsionDriveResultCollection {
-    entries: HashMap<String, Vec<Entry>>,
+    pub entries: HashMap<String, Vec<Entry>>,
+    pub provenance: Provenance,
+
+    #[serde(rename = "type")]
+    pub typ: String,
 }
 
 impl TorsionDriveResultCollection {
@@ -53,5 +73,29 @@ impl TorsionDriveResultCollection {
             }
         }
         ret
+    }
+
+    /// in the common case where there is only a single entry in the dataset,
+    /// return a reference to the vector of entries. If there are multiple
+    /// entries, return `Err(())`
+    pub fn entries(&self) -> Option<&[Entry]> {
+        if self.entries.len() == 1 {
+            return Some(self.entries.iter().next().unwrap().1);
+        }
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn load_filtered() {
+        let got = TorsionDriveResultCollection::parse_file(
+            "../../projects/valence-fitting/02_curate-data/datasets/\
+	     filtered-sage-td.json",
+        )
+        .unwrap();
     }
 }
