@@ -7,7 +7,7 @@ use serde::{
 };
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Filters(Vec<Filter>);
+pub struct Filters(pub Vec<Filter>);
 
 impl Filters {
     fn new() -> Self {

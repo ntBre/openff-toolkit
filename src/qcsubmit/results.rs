@@ -14,7 +14,7 @@ pub mod filters;
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Provenance {
     #[serde(rename = "applied-filters")]
-    applied_filters: Filters,
+    pub applied_filters: Filters,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -22,7 +22,7 @@ pub struct Entry {
     #[serde(rename = "type")]
     typ: String,
 
-    record_id: String,
+    pub record_id: String,
 
     cmiles: String,
 
