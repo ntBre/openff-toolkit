@@ -97,5 +97,9 @@ mod tests {
 	     filtered-sage-td.json",
         )
         .unwrap();
+
+        insta::assert_debug_snapshot!(
+            serde_json::to_string_pretty(&got).unwrap()
+        );
     }
 }
