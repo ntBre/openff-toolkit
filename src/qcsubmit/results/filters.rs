@@ -105,32 +105,32 @@ impl Serialize for Filters {
         S: Serializer,
     {
         let mut map = serializer.serialize_map(Some(self.0.len()))?;
-        for e in &self.0 {
+        for (count, e) in self.0.iter().enumerate() {
             match e {
                 Filter::HydrogenBond { method } => map.serialize_entry(
-                    "HydrogenBondFilter",
+                    &format!("HydrogenBondFilter-{count}"),
                     &HashMap::from([("method", method)]),
                 )?,
                 Filter::RecordStatus { status } => map.serialize_entry(
-                    "RecordStatusFilter",
+                    &format!("RecordStatusFilter-{count}"),
                     &HashMap::from([("status", status)]),
                 )?,
                 Filter::Connectivity { tolerance } => map.serialize_entry(
-                    "ConnectivityFilter",
+                    &format!("ConnectivityFilter-{count}"),
                     &HashMap::from([("tolerance", tolerance)]),
                 )?,
                 Filter::UnperceivableStereo { toolkits } => map
                     .serialize_entry(
-                        "UnperceivableStereoFilter",
+                        &format!("UnperceivableStereoFilter-{count}"),
                         &HashMap::from([("toolkits", toolkits)]),
                     )?,
                 Filter::Element { allowed_elements } => map.serialize_entry(
-                    "ElementFilter",
+                    &format!("ElementFilter-{count}"),
                     &HashMap::from([("allowed_elements", allowed_elements)]),
                 )?,
                 Filter::Misc(name) => map
                     .serialize_entry::<_, HashMap<(), ()>>(
-                        name,
+                        &format!("{name}-{count}"),
                         &HashMap::from([]),
                     )?,
             }
