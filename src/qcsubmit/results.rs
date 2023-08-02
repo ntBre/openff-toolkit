@@ -86,6 +86,17 @@ impl TorsionDriveResultCollection {
     }
 }
 
+// TODO is there more to this? it's a straight copy paste right now? even worth
+// having?
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct OptimizationResultCollection {
+    pub entries: HashMap<String, Vec<Entry>>,
+    pub provenance: Provenance,
+
+    #[serde(rename = "type")]
+    pub typ: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
