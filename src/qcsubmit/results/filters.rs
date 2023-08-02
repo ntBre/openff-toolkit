@@ -6,7 +6,7 @@ use serde::{
     Deserialize, Serialize, Serializer,
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Filters(pub Vec<Filter>);
 
 impl Filters {

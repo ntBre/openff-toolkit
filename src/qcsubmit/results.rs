@@ -13,7 +13,7 @@ pub mod filters;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Provenance {
-    #[serde(rename = "applied-filters")]
+    #[serde(rename = "applied-filters", default)]
     pub applied_filters: Filters,
 }
 
