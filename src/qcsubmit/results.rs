@@ -84,6 +84,11 @@ impl TorsionDriveResultCollection {
         }
         None
     }
+
+    /// return the sum of lengths of `self.entries`
+    pub fn len(&self) -> usize {
+        self.entries.values().map(|v| v.len()).sum()
+    }
 }
 
 // TODO is there more to this? it's a straight copy paste right now? even worth
