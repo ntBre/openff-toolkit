@@ -1,10 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::Quantity;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Bond {
     #[serde(rename = "@smirks")]
     pub smirks: String,
@@ -40,7 +40,7 @@ impl Bond {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Bonds {
     #[serde(rename = "@version")]
     pub(crate) version: String,

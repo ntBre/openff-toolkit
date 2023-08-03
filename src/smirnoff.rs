@@ -9,7 +9,7 @@ use std::{
     string::ParseError,
 };
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::topology::{
     self, ChemicalEnvironment, ChemicalEnvironmentMatch, Topology,
@@ -19,16 +19,30 @@ use self::bonds::Bond;
 
 mod bonds;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub enum Unit {
     Unit(String),
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(try_from = "String")]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(try_from = "String", into = "String")]
 pub struct Quantity {
     pub value: f64,
     pub unit: Unit,
+}
+
+impl Display for Quantity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.unit {
+            Unit::Unit(u) => write!(f, "{} {u}", self.value),
+        }
+    }
+}
+
+impl Into<String> for Quantity {
+    fn into(self) -> String {
+        format!("{self}")
+    }
 }
 
 #[derive(Debug)]
@@ -60,7 +74,7 @@ impl TryFrom<String> for Quantity {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Constraint {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -72,7 +86,7 @@ struct Constraint {
     distance: Option<Quantity>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Constraints {
     #[serde(rename = "@version")]
     version: String,
@@ -81,7 +95,7 @@ struct Constraints {
     constraints: Vec<Constraint>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Angle {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -117,7 +131,7 @@ impl Angle {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Angles {
     #[serde(rename = "@version")]
     version: String,
@@ -153,7 +167,7 @@ impl<'a> IntoIterator for &'a Angles {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Proper {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -237,7 +251,7 @@ impl Proper {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct ProperTorsions {
     #[serde(rename = "@version")]
     version: String,
@@ -282,7 +296,7 @@ impl IndexMut<usize> for ProperTorsions {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Improper {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -301,7 +315,7 @@ struct Improper {
     k1: Quantity,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct ImproperTorsions {
     #[serde(rename = "@version")]
     version: String,
@@ -316,7 +330,7 @@ struct ImproperTorsions {
     improper_torsions: Vec<Improper>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Atom {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -331,7 +345,7 @@ struct Atom {
     rmin_half: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Vdw {
     #[serde(rename = "@version")]
     version: String,
@@ -367,7 +381,7 @@ struct Vdw {
     atoms: Vec<Atom>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct Electrostatics {
     #[serde(rename = "@version")]
     version: String,
@@ -394,7 +408,7 @@ struct Electrostatics {
     method: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct LibraryCharge {
     #[serde(rename = "@smirks")]
     smirks: String,
@@ -406,7 +420,7 @@ struct LibraryCharge {
     charge1: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct LibraryCharges {
     #[serde(rename = "@version")]
     version: String,
@@ -415,14 +429,14 @@ struct LibraryCharges {
     library_charges: Vec<LibraryCharge>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 struct ToolkitAM1BCC {
     #[serde(rename = "@version")]
     version: String,
 }
 
 /// A SMIRNOFF force field
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct ForceField {
     #[serde(rename = "@version")]
     version: String,
@@ -647,5 +661,13 @@ mod tests {
     #[test]
     fn load_fb() {
         let got = ForceField::load("testfiles/force-field.offxml").unwrap();
+    }
+
+    #[test]
+    fn round_trip() {
+        let want = ForceField::load("testfiles/force-field.offxml").unwrap();
+        let s = quick_xml::se::to_string(&want).unwrap();
+        let got: ForceField = quick_xml::de::from_str(&s).unwrap();
+        assert_eq!(got, want);
     }
 }
