@@ -1,6 +1,12 @@
 use std::{
-    collections::HashMap, error::Error, fmt::Display, fs::read_to_string,
-    ops::Index, path::Path, str::FromStr, string::ParseError,
+    collections::HashMap,
+    error::Error,
+    fmt::Display,
+    fs::read_to_string,
+    ops::{Index, IndexMut},
+    path::Path,
+    str::FromStr,
+    string::ParseError,
 };
 
 use serde::Deserialize;
@@ -101,6 +107,14 @@ impl Angle {
             _ => None,
         }
     }
+
+    pub fn as_hash_mut(&mut self, key: &str) -> Option<&mut Quantity> {
+        match key {
+            "angle" => Some(&mut self.angle),
+            "k" => Some(&mut self.k),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -120,6 +134,12 @@ impl Index<usize> for Angles {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.angles[index]
+    }
+}
+
+impl IndexMut<usize> for Angles {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.angles[index]
     }
 }
 
@@ -203,6 +223,18 @@ impl Proper {
             _ => None,
         }
     }
+
+    pub fn as_hash_mut(&mut self, key: &str) -> Option<&mut Quantity> {
+        match key {
+            "k1" => Some(&mut self.k1),
+            "k2" => self.k2.as_mut(),
+            "k3" => self.k3.as_mut(),
+            "k4" => self.k4.as_mut(),
+            "k5" => self.k5.as_mut(),
+            "k6" => self.k6.as_mut(),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -241,6 +273,12 @@ impl Index<usize> for ProperTorsions {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.proper_torsions[index]
+    }
+}
+
+impl IndexMut<usize> for ProperTorsions {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.proper_torsions[index]
     }
 }
 
