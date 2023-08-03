@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 
 use serde::Deserialize;
 
@@ -30,6 +30,14 @@ impl Bond {
             _ => None,
         }
     }
+
+    pub fn as_hash_mut(&mut self, key: &str) -> Option<&mut Quantity> {
+        match key {
+            "length" => Some(&mut self.length),
+            "k" => Some(&mut self.k),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -55,6 +63,12 @@ impl Index<usize> for Bonds {
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.bonds[index]
+    }
+}
+
+impl IndexMut<usize> for Bonds {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.bonds[index]
     }
 }
 
