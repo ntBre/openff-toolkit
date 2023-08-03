@@ -567,7 +567,11 @@ impl ForceField {
     }
 
     pub fn to_xml(&self) -> Result<String, quick_xml::DeError> {
-        quick_xml::se::to_string(&self)
+        let mut buf = String::new();
+        let mut ser = quick_xml::se::Serializer::new(&mut buf);
+        ser.indent(' ', 2);
+        let res = self.serialize(ser)?;
+        Ok(buf)
     }
 
     // TODO this should take an enum not string
