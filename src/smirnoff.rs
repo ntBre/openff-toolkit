@@ -566,6 +566,10 @@ impl ForceField {
         Ok(ff)
     }
 
+    pub fn to_xml(&self) -> Result<String, quick_xml::DeError> {
+        quick_xml::se::to_string(&self)
+    }
+
     // TODO this should take an enum not string
     pub fn get_parameter_handler(
         &self,
