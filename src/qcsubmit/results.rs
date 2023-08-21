@@ -20,13 +20,13 @@ pub struct Provenance {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Entry {
     #[serde(rename = "type")]
-    typ: String,
+    pub typ: String,
 
     pub record_id: String,
 
-    cmiles: String,
+    pub cmiles: String,
 
-    inchi_key: String,
+    pub inchi_key: String,
 }
 
 impl Entry {
