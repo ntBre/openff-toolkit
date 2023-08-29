@@ -42,6 +42,13 @@ impl Topology {
         Self { molecules }
     }
 
+    pub fn from_openmm(
+        topology: &openmm::topology::Topology,
+        molecules: Vec<Molecule>,
+    ) -> Self {
+        todo!();
+    }
+
     pub(crate) fn chemical_environment_matches(
         &self,
         smirks: &str,

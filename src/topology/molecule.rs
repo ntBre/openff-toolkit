@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
+
+use rodeo::{AromaticityModel, RWMol};
 
 use super::{ChemicalEnvironmentMatch, Topology};
 
@@ -16,7 +18,23 @@ pub struct Molecule {
     pub smiles: String,
 }
 
+impl From<RWMol> for Molecule {
+    fn from(value: RWMol) -> Self {
+        todo!()
+    }
+}
+
 impl Molecule {
+    /// load an SDF file
+    pub fn from_file(file: impl AsRef<Path>) -> Self {
+        let mut rdmol = RWMol::from_sdf(file);
+        use rodeo::SanitizeOptions as S;
+        rdmol.sanitize(S::All ^ S::SetAromaticity ^ S::AdjustHs);
+        rdmol.assign_stereochemistry_from_3d();
+        rdmol.set_aromaticity(AromaticityModel::MDL);
+        rdmol.into()
+    }
+
     fn index(&self, atom: &Atom) -> Option<usize> {
         self.atoms.iter().position(|a| a == atom)
     }

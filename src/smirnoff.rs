@@ -655,6 +655,20 @@ impl ForceField {
 
         molecule_labels
     }
+
+    pub fn create_interchange(&self, topology: &Topology) -> Interchange {
+        todo!();
+    }
+}
+
+pub struct Interchange {
+    pub virtual_sites: Vec<()>,
+}
+
+impl Interchange {
+    pub fn to_openmm_topology(self) -> openmm::topology::Topology {
+        todo!();
+    }
 }
 
 #[cfg(test)]
