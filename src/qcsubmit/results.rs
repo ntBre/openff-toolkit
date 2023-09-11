@@ -90,6 +90,11 @@ impl TorsionDriveResultCollection {
     pub fn len(&self) -> usize {
         self.entries.values().map(|v| v.len()).sum()
     }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 // TODO is there more to this? it's a straight copy paste right now? even worth

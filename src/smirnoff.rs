@@ -39,9 +39,9 @@ impl Display for Quantity {
     }
 }
 
-impl Into<String> for Quantity {
-    fn into(self) -> String {
-        format!("{self}")
+impl From<Quantity> for String {
+    fn from(value: Quantity) -> Self {
+        format!("{value}")
     }
 }
 
@@ -570,7 +570,7 @@ impl ForceField {
         let mut buf = String::new();
         let mut ser = quick_xml::se::Serializer::new(&mut buf);
         ser.indent(' ', 2);
-        let res = self.serialize(ser)?;
+        self.serialize(ser)?;
         Ok(buf)
     }
 
