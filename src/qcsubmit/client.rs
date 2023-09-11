@@ -64,6 +64,8 @@ pub fn make_td_results(
     ret
 }
 
+pub type Cmiles = String;
+
 /// Analagous to [make_td_results] but without all of the bookkeeping mapping
 /// individual molecules back to their corresponding TorsionDrives. Just pass in
 /// a Vec<Molecule> and get back a Vec<(id, cmiles, Vec<Geometry>)>. The
@@ -73,7 +75,7 @@ pub fn make_opt_results(
     records: Vec<OptimizationRecord>,
     molecule_ids: HashMap<String, String>,
     mut molecules: HashMap<String, Molecule>,
-) -> Vec<(OptimizationRecord, String, Vec<Vec<f64>>)> {
+) -> Vec<(OptimizationRecord, Cmiles, Vec<Vec<f64>>)> {
     let mut ret = Vec::new();
     for record in records {
         // do this first so we don't have to clone record.id

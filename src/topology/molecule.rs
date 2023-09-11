@@ -2,6 +2,8 @@ use std::{collections::HashMap, path::Path};
 
 use rodeo::{AromaticityModel, RWMol};
 
+use crate::qcsubmit::client::Cmiles;
+
 use super::{ChemicalEnvironmentMatch, Topology};
 
 #[derive(Clone, Copy, PartialEq)]
