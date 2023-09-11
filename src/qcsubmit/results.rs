@@ -9,6 +9,8 @@ use crate::{
 
 use self::filters::Filters;
 
+use super::client::FractalClient;
+
 pub mod filters;
 
 #[cfg(test)]
@@ -60,6 +62,7 @@ impl TorsionDriveResultCollection {
     // `TorsionDriveResultCollection`s from files
     pub fn to_records(self) -> Vec<(TorsionDriveRecord, Molecule)> {
         let mut ret = Vec::new();
+        let client = FractalClient::new();
         for (_client_address, entries) in self.entries {
             for entry in entries {
                 ret.push((

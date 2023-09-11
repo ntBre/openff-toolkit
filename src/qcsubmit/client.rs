@@ -1,7 +1,8 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use futures::{future::join_all, Future};
-use reqwest::{header::HeaderMap, Client};
+use reqwest::blocking::Client;
+use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
 
 use collection::{CollectionGetBody, CollectionGetResponse};
@@ -15,6 +16,118 @@ use self::collection::TorsionDriveResult;
 mod collection;
 mod molecule;
 mod procedure;
+
+#[cfg(test)]
+mod tests {
+    use crate::qcsubmit::{
+        client::collection::CollectionType,
+        results::TorsionDriveResultCollection,
+    };
+
+    use super::*;
+    use std::fs::read_to_string;
+
+    #[test]
+    fn de_response() {
+        let s = read_to_string("testfiles/response.json").unwrap();
+        let c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
+    }
+
+    #[test]
+    fn de_singlept_response() {
+        let s = read_to_string("testfiles/singlept_collection.json").unwrap();
+        let c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
+    }
+
+    #[test]
+    fn de_procedure() {
+        let s = read_to_string("testfiles/procedure.json").unwrap();
+        let c: Response<TorsionDriveRecord> = serde_json::from_str(&s).unwrap();
+    }
+
+    #[test]
+    fn de_opt_procedure() {
+        let s = read_to_string("testfiles/opt_procedure.json").unwrap();
+        let c: Response<OptimizationRecord> = serde_json::from_str(&s).unwrap();
+    }
+
+    #[test]
+    fn full() {
+        let want = {
+            let s = read_to_string("testfiles/final.dat").unwrap();
+            let lines = s.lines();
+            let mut ret = Vec::new();
+            for line in lines {
+                let sp: Vec<_> = line.split("=>").map(|s| s.trim()).collect();
+                ret.push((
+                    sp[0].to_owned(),
+                    sp[1].to_owned(),
+                    sp[2].parse::<usize>().unwrap(),
+                ));
+            }
+            ret.sort_by_key(|r| r.0.clone());
+            ret
+        };
+
+        let client = FractalClient::new();
+        let col = CollectionGetBody::new(
+            CollectionType::TorsionDrive,
+            "OpenFF multiplicity correction torsion drive data v1.1",
+        );
+
+        let col = client.get_collection(col);
+        let mut got = client.torsion_drive_records(col, 400);
+
+        got.sort_by_key(|g| g.0.id.clone());
+        let got: Vec<_> = got
+            .into_iter()
+            .map(|(a, b, c)| (a.id, b, c.len()))
+            .collect();
+
+        assert_eq!(got, want);
+    }
+
+    async fn full_opt() {
+        let want = {
+            let s = read_to_string("testfiles/final_opt.dat").unwrap();
+            let lines = s.lines();
+            let mut ret = Vec::new();
+            for line in lines {
+                let sp: Vec<_> = line.split("=>").map(|s| s.trim()).collect();
+                ret.push((
+                    sp[0].to_owned(),
+                    sp[1].to_owned(),
+                    sp[2].parse::<usize>().unwrap(),
+                ));
+            }
+            ret.sort_by_key(|r| r.0.clone());
+            ret
+        };
+
+        let client = FractalClient::new();
+        let ds =
+            TorsionDriveResultCollection::parse_file("testfiles/core-opt.json")
+                .unwrap();
+        let col: CollectionGetResponse = ds.into();
+        let mut got = client.optimization_records(col, 400);
+
+        got.sort_by_key(|g| g.0.id.clone());
+        // NOTE: unlike above, comparing the length of the geometry (in atoms)
+        // rather than the length of the conformers vector because it should always
+        // contain a single conformer
+        let got: Vec<_> = got
+            .into_iter()
+            .map(|(a, b, c)| (a.id, b, c[0].len() / 3))
+            .collect();
+
+        assert_eq!(got.len(), want.len());
+
+        for (i, (g, w)) in got.iter().zip(want.iter()).enumerate() {
+            assert_eq!(g, w, "mismatch at {i}: got:\n{g:#?}\nwant:\n{w:#?}\n");
+        }
+        assert_eq!(got, want);
+    }
+}
 
 // TODO get rid of both make_*_results functions
 
@@ -171,26 +284,22 @@ impl FractalClient {
         ret
     }
 
-    pub async fn get_information(&self) -> Result<Information, Box<dyn Error>> {
+    pub fn get_information(&self) -> Result<Information, Box<dyn Error>> {
         let url = format!("{}information", self.address);
-        let response = self
-            .client
-            .get(url)
-            .headers(self.headers.clone())
-            .send()
-            .await?;
+        let response =
+            self.client.get(url).headers(self.headers.clone()).send()?;
         if !response.status().is_success() {
             return Err(Box::new(ClientError));
         }
-        let info: Information = response.json().await?;
+        let info: Information = response.json()?;
         Ok(info)
     }
 
-    async fn get(
+    fn get(
         &self,
         endpoint: &str,
         body: impl ToJson,
-    ) -> reqwest::Response {
+    ) -> reqwest::blocking::Response {
         let url = format!("{}{endpoint}", self.address);
         let ret = self
             .client
@@ -198,7 +307,6 @@ impl FractalClient {
             .body(body.to_json().unwrap())
             .headers(self.headers.clone())
             .send()
-            .await
             .unwrap();
         if !ret.status().is_success() {
             panic!("get `{endpoint}` failed with {ret:?}");
@@ -206,18 +314,18 @@ impl FractalClient {
         ret
     }
 
-    pub async fn get_collection(
+    pub fn get_collection(
         &self,
         body: CollectionGetBody,
     ) -> CollectionGetResponse {
-        match self.get("collection", body.clone()).await.json().await {
+        match self.get("collection", body.clone()).json() {
             Ok(r) => r,
             Err(_) => {
                 // this is very stupid, but I'm tired of having to comment
                 // things out and add todo!() to see the text
                 std::fs::write(
                     "/tmp/out.json",
-                    self.get("collection", body).await.text().await.unwrap(),
+                    self.get("collection", body).text().unwrap(),
                 )
                 .unwrap();
                 panic!("failed get_collection")
@@ -225,26 +333,23 @@ impl FractalClient {
         }
     }
 
-    pub async fn get_procedure<T: for<'a> Deserialize<'a>>(
+    pub fn get_procedure<T: for<'a> Deserialize<'a>>(
         &self,
         body: ProcedureGetBody,
     ) -> Response<T> {
-        self.get("procedure", body).await.json().await.unwrap()
+        self.get("procedure", body).json().unwrap()
     }
 
-    pub async fn get_molecule(
-        &self,
-        body: MoleculeGetBody,
-    ) -> Response<Molecule> {
-        self.get("molecule", body).await.json().await.unwrap()
+    pub fn get_molecule(&self, body: MoleculeGetBody) -> Response<Molecule> {
+        self.get("molecule", body).json().unwrap()
     }
 
     /// Make an information request to the server to obtain the query limit
-    pub async fn get_query_limit(&self) -> usize {
-        self.get_information().await.unwrap().query_limit
+    pub fn get_query_limit(&self) -> usize {
+        self.get_information().unwrap().query_limit
     }
 
-    async fn get_chunked<'a, B, R, F, Q>(
+    fn get_chunked<'a, B, R, Q>(
         &'a self,
         method: Q,
         ids: &[String],
@@ -252,18 +357,17 @@ impl FractalClient {
     ) -> Vec<R>
     where
         B: Body,
-        F: Future<Output = R>,
-        Q: Fn(&'a FractalClient, B) -> F,
+        Q: Fn(&'a FractalClient, B) -> R,
     {
         let mut futures = Vec::new();
         for chunk in ids.chunks(chunk_size) {
             let proc = B::new(chunk.to_vec());
             futures.push(method(self, proc));
         }
-        join_all(futures).await
+        futures
     }
 
-    pub async fn optimization_records(
+    pub fn optimization_records(
         &self,
         collection: CollectionGetResponse,
         query_limit: usize,
@@ -272,7 +376,6 @@ impl FractalClient {
         // collection
         let records: Vec<OptimizationRecord> = self
             .get_chunked(Self::get_procedure, &collection.ids(), query_limit)
-            .await
             .into_iter()
             .flatten()
             .filter(|r: &OptimizationRecord| r.status.is_complete())
@@ -298,7 +401,6 @@ impl FractalClient {
         // as a map of id -> mol
         let molecules: HashMap<_, _> = self
             .get_chunked(Self::get_molecule, &ids, query_limit)
-            .await
             .into_iter()
             .flatten()
             .map(|m| (m.id.clone(), m))
@@ -313,7 +415,7 @@ impl FractalClient {
         make_opt_results(results, records, molecule_ids, molecules)
     }
 
-    pub async fn torsion_drive_records(
+    pub fn torsion_drive_records(
         &self,
         collection: CollectionGetResponse,
         query_limit: usize,
@@ -322,7 +424,6 @@ impl FractalClient {
         // collection
         let records: Vec<TorsionDriveRecord> = self
             .get_chunked(Self::get_procedure, &collection.ids(), query_limit)
-            .await
             .into_iter()
             .flatten()
             .filter(|r: &TorsionDriveRecord| r.status.is_complete())
@@ -342,7 +443,6 @@ impl FractalClient {
         // TorsionDrive
         let responses: Vec<OptimizationRecord> = self
             .get_chunked(Self::get_procedure, &optimization_ids, query_limit)
-            .await
             .into_iter()
             .flatten()
             .collect();
@@ -364,7 +464,6 @@ impl FractalClient {
         // get the final molecules from each optimization trajectory
         let molecules: HashMap<_, _> = self
             .get_chunked(Self::get_molecule, &ids, query_limit)
-            .await
             .into_iter()
             .flatten()
             .map(|mol| (mol.id.clone(), mol))
