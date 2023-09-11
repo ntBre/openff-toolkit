@@ -70,26 +70,16 @@ pub fn make_td_results(
 /// Vec<Geometry> will always have length one. A vector is used just to keep the
 /// return type consistent with the TorsionDrive version.
 pub fn make_opt_results(
-    results: Vec<TorsionDriveResult>,
     records: Vec<OptimizationRecord>,
     molecule_ids: HashMap<String, String>,
-    molecules: HashMap<String, Molecule>,
+    mut molecules: HashMap<String, Molecule>,
 ) -> Vec<(OptimizationRecord, String, Vec<Vec<f64>>)> {
-    // there may be more results than records, but accessing them with this map
-    // by the id stored on the records ensures that I only get the ones I want
-    let cmiles_map: HashMap<_, _> = results
-        .iter()
-        .map(|rec| (rec.record_id(), rec.cmiles()))
-        .collect();
-
     let mut ret = Vec::new();
     for record in records {
         // do this first so we don't have to clone record.id
         let id = &molecule_ids[&record.id];
-        // sad clones
-        let geom = molecules[id].clone();
-        let cmiles = cmiles_map[&record.id].clone();
-        ret.push((record, cmiles, vec![geom.geometry]));
+        let geom = molecules.remove(id).unwrap();
+        ret.push((record, geom.cmiles(), vec![geom.geometry]));
     }
 
     ret
@@ -297,13 +287,7 @@ impl FractalClient {
             .map(|m| (m.id.clone(), m))
             .collect();
 
-        let results: Vec<_> = collection
-            .data
-            .into_iter()
-            .flat_map(|ds| ds.records.into_values())
-            .collect();
-
-        make_opt_results(results, records, molecule_ids, molecules)
+        make_opt_results(records, molecule_ids, molecules)
     }
 
     pub fn torsion_drive_records(
