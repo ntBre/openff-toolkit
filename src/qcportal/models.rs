@@ -1,3 +1,3 @@
-pub struct TorsionDriveRecord {
+pub struct Record {
     pub id: String,
 }

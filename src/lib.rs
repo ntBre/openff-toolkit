@@ -15,13 +15,12 @@ mod tests {
     };
 
     use crate::{
-        qcportal::models::TorsionDriveRecord,
-        qcsubmit::results::ResultCollection, smirnoff::ForceField,
-        topology::molecule::Molecule,
+        qcportal::models::Record, qcsubmit::results::ResultCollection,
+        smirnoff::ForceField, topology::molecule::Molecule,
     };
 
     fn label_and_tag_ids(
-        (record, molecule): (TorsionDriveRecord, Molecule),
+        (record, molecule): (Record, Molecule),
         force_field: &ForceField,
         parameter_types: impl IntoIterator<Item = String>,
     ) -> HashSet<(String, String, usize)> {

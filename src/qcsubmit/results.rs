@@ -2,9 +2,7 @@ use std::{collections::HashMap, error::Error, fs::read_to_string, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    qcportal::models::TorsionDriveRecord, topology::molecule::Molecule,
-};
+use crate::{qcportal::models::Record, topology::molecule::Molecule};
 
 use self::filters::Filters;
 
@@ -59,13 +57,13 @@ impl ResultCollection {
     // probably actually retrieving from qcarchive. for now just return what's
     // in the hashmap, which I think should be correct for
     // `TorsionDriveResultCollection`s from files
-    pub fn to_records(self) -> Vec<(TorsionDriveRecord, Molecule)> {
+    pub fn to_records(self) -> Vec<(Record, Molecule)> {
         let mut ret = Vec::new();
         let _client = FractalClient::new();
         for (_client_address, entries) in self.entries {
             for entry in entries {
                 ret.push((
-                    TorsionDriveRecord {
+                    Record {
                         id: entry.record_id,
                     },
                     // TODO convert cmiles to smiles
