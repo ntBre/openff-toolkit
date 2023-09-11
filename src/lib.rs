@@ -110,6 +110,7 @@ mod tests {
     /// this is example code from my valence-fitting repo to combine two
     /// datasets. the python version took over 13 minutes to run
     #[test]
+    #[ignore]
     fn combine() {
         let base = Path::new(
             "/home/brent/omsf/clone/sage-2.1.0/inputs-and-outputs/data-sets/",
