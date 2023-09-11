@@ -87,7 +87,8 @@ mod tests {
         assert_eq!(got, want);
     }
 
-    async fn full_opt() {
+    #[test]
+    fn full_opt() {
         let want = {
             let s = read_to_string("testfiles/final_opt.dat").unwrap();
             let lines = s.lines();
@@ -113,8 +114,8 @@ mod tests {
 
         got.sort_by_key(|g| g.0.id.clone());
         // NOTE: unlike above, comparing the length of the geometry (in atoms)
-        // rather than the length of the conformers vector because it should always
-        // contain a single conformer
+        // rather than the length of the conformers vector because it should
+        // always contain a single conformer
         let got: Vec<_> = got
             .into_iter()
             .map(|(a, b, c)| (a.id, b, c[0].len() / 3))
