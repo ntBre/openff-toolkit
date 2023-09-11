@@ -108,8 +108,7 @@ mod tests {
         let client = FractalClient::new();
         let ds =
             ResultCollection::parse_file("testfiles/core-opt.json").unwrap();
-        let col: CollectionGetResponse = ds.into();
-        let mut got = client.optimization_records(col, 400);
+        let mut got = client.optimization_records(ds, 400);
 
         got.sort_by_key(|g| g.0.id.clone());
         // NOTE: unlike above, comparing the length of the geometry (in atoms)
@@ -369,9 +368,10 @@ impl FractalClient {
 
     pub fn optimization_records(
         &self,
-        collection: CollectionGetResponse,
+        collection: impl Into<CollectionGetResponse>,
         query_limit: usize,
     ) -> Vec<(OptimizationRecord, String, Vec<Vec<f64>>)> {
+        let collection = collection.into();
         // request the OptimizationRecords corresponding to the ids in the
         // collection
         let records: Vec<OptimizationRecord> = self
