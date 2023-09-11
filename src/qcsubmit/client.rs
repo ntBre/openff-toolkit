@@ -1,6 +1,5 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
-use futures::{future::join_all, Future};
 use reqwest::blocking::Client;
 use reqwest::header::HeaderMap;
 use serde::{Deserialize, Serialize};
@@ -30,25 +29,27 @@ mod tests {
     #[test]
     fn de_response() {
         let s = read_to_string("testfiles/response.json").unwrap();
-        let c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
+        let _c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
     }
 
     #[test]
     fn de_singlept_response() {
         let s = read_to_string("testfiles/singlept_collection.json").unwrap();
-        let c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
+        let _c: CollectionGetResponse = serde_json::from_str(&s).unwrap();
     }
 
     #[test]
     fn de_procedure() {
         let s = read_to_string("testfiles/procedure.json").unwrap();
-        let c: Response<TorsionDriveRecord> = serde_json::from_str(&s).unwrap();
+        let _c: Response<TorsionDriveRecord> =
+            serde_json::from_str(&s).unwrap();
     }
 
     #[test]
     fn de_opt_procedure() {
         let s = read_to_string("testfiles/opt_procedure.json").unwrap();
-        let c: Response<OptimizationRecord> = serde_json::from_str(&s).unwrap();
+        let _c: Response<OptimizationRecord> =
+            serde_json::from_str(&s).unwrap();
     }
 
     #[test]

@@ -12,6 +12,7 @@ pub struct ChemicalEnvironment {
 #[derive(Clone)]
 pub(crate) struct ChemicalEnvironmentMatch {
     pub(crate) reference_atom_indices: Vec<usize>,
+    #[allow(unused)]
     pub(crate) reference_molecule: Molecule,
     pub(crate) topology_atom_indices: Vec<usize>,
 }
@@ -43,8 +44,8 @@ impl Topology {
     }
 
     pub fn from_openmm(
-        topology: &openmm::topology::Topology,
-        molecules: Vec<Molecule>,
+        _topology: &openmm::topology::Topology,
+        _molecules: Vec<Molecule>,
     ) -> Self {
         todo!();
     }
@@ -108,8 +109,8 @@ impl Topology {
                     continue;
                 }
                 let mol2 = &self.molecules[mol2_idx];
-                /// wtf? why call on mol1 and pass mol1 ?? and why "are
-                /// isomorphic" instead of "is"
+                // wtf? why call on mol1 and pass mol1 ?? and why "are
+                // isomorphic" instead of "is"
                 let (are_isomorphic, atom_map) = mol1.are_isomorphic(mol2);
 
                 // there's an isinstance check in python, but we'll assume the
@@ -138,7 +139,7 @@ impl Topology {
         groupings
     }
 
-    fn atom_index(&self, atom: &Atom) -> usize {
+    fn atom_index(&self, _atom: &Atom) -> usize {
         todo!()
     }
 }

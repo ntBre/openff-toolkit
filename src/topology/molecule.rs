@@ -5,7 +5,7 @@ use rodeo::{AromaticityModel, RWMol};
 use super::{ChemicalEnvironmentMatch, Topology};
 
 #[derive(Clone, Copy, PartialEq)]
-enum Stereochemistry {
+pub enum Stereochemistry {
     R,
     S,
     None,
@@ -20,7 +20,7 @@ pub struct Molecule {
 }
 
 impl From<RWMol> for Molecule {
-    fn from(value: RWMol) -> Self {
+    fn from(_value: RWMol) -> Self {
         todo!()
     }
 }
@@ -46,14 +46,14 @@ impl Molecule {
 
     pub fn are_isomorphic(
         &self,
-        mol2: &Molecule,
+        _mol2: &Molecule,
     ) -> (bool, HashMap<usize, usize>) {
         todo!();
     }
 
     pub(crate) fn chemical_environment_matches(
         &self,
-        smarts: &str,
+        _smarts: &str,
     ) -> Vec<ChemicalEnvironmentMatch> {
         todo!()
     }
@@ -61,10 +61,12 @@ impl Molecule {
 
 type AtomMetadata = HashMap<String, String>;
 
+#[allow(unused)]
 enum Unit {
     Dalton,
 }
 
+#[allow(unused)]
 struct Quantity {
     value: f64,
     unit: Unit,
@@ -102,6 +104,7 @@ pub struct Atom {
     molecule_atom_index: Option<usize>,
 }
 
+#[allow(unused)]
 impl Atom {
     fn new(
         atomic_number: usize,
@@ -306,6 +309,7 @@ struct Bond {
 }
 
 impl Bond {
+    #[allow(unused)]
     fn new(
         atom1: Atom,
         atom2: Atom,

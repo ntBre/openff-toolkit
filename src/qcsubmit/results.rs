@@ -3,8 +3,7 @@ use std::{collections::HashMap, error::Error, fs::read_to_string, path::Path};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    qcportal::models::TorsionDriveRecord, smirnoff::ForceField,
-    topology::molecule::Molecule,
+    qcportal::models::TorsionDriveRecord, topology::molecule::Molecule,
 };
 
 use self::filters::Filters;
@@ -62,7 +61,7 @@ impl TorsionDriveResultCollection {
     // `TorsionDriveResultCollection`s from files
     pub fn to_records(self) -> Vec<(TorsionDriveRecord, Molecule)> {
         let mut ret = Vec::new();
-        let client = FractalClient::new();
+        let _client = FractalClient::new();
         for (_client_address, entries) in self.entries {
             for entry in entries {
                 ret.push((

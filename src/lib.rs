@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 pub mod smirnoff;
 pub mod topology;
 
@@ -22,8 +20,6 @@ mod tests {
         topology::molecule::Molecule,
     };
 
-    use super::*;
-
     fn label_and_tag_ids(
         (record, molecule): (TorsionDriveRecord, Molecule),
         force_field: &ForceField,
@@ -42,7 +38,7 @@ mod tests {
                 .filter(|&a| a.atomic_number != 1)
                 .count();
 
-            for (indices, parameter) in parameter_labels {
+            for (_indices, parameter) in parameter_labels {
                 parameter_ids.insert((
                     parameter,
                     record.id.clone(),
@@ -63,7 +59,7 @@ mod tests {
         for record in dataset.to_records() {
             let parameter_ids =
                 label_and_tag_ids(record, force_field, parameter_types.clone());
-            for (parameter_id, record_id, n_heavy_atoms) in parameter_ids {
+            for (parameter_id, _record_id, _n_heavy_atoms) in parameter_ids {
                 *ret.entry(parameter_id).or_insert(0) += 1;
             }
         }
@@ -121,7 +117,7 @@ mod tests {
             "/home/brent/omsf/projects/valence-fitting/01_generate-forcefield/output/initial-force-field-openff-2.1.0.offxml",
         )
         .unwrap();
-        let selected_parameters =
+        let _selected_parameters =
             select_parameters(sage_td, &ff, ["ProperTorsions".to_owned()]);
     }
 }

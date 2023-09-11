@@ -5,15 +5,11 @@ use std::{
     fs::read_to_string,
     ops::{Index, IndexMut},
     path::Path,
-    str::FromStr,
-    string::ParseError,
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::topology::{
-    self, ChemicalEnvironment, ChemicalEnvironmentMatch, Topology,
-};
+use crate::topology::{ChemicalEnvironmentMatch, Topology};
 
 use self::bonds::Bond;
 
@@ -508,6 +504,7 @@ macro_rules! impl_parameter {
 
 impl_parameter!(Bond, Angle, Proper, Improper);
 
+#[allow(unused)]
 struct Match {
     parameter_type: String,
     environment_match: ChemicalEnvironmentMatch,
@@ -656,7 +653,7 @@ impl ForceField {
         molecule_labels
     }
 
-    pub fn create_interchange(&self, topology: &Topology) -> Interchange {
+    pub fn create_interchange(&self, _topology: &Topology) -> Interchange {
         todo!();
     }
 }
@@ -677,12 +674,12 @@ mod tests {
 
     #[test]
     fn load() {
-        let got = ForceField::load("testfiles/sage-2.1.0rc.offxml").unwrap();
+        let _ = ForceField::load("testfiles/sage-2.1.0rc.offxml").unwrap();
     }
 
     #[test]
     fn load_fb() {
-        let got = ForceField::load("testfiles/force-field.offxml").unwrap();
+        let _ = ForceField::load("testfiles/force-field.offxml").unwrap();
     }
 
     #[test]

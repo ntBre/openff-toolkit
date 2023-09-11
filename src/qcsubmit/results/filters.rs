@@ -1,8 +1,8 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::collections::HashMap;
 
 use serde::{
     de::{IgnoredAny, Visitor},
-    ser::{SerializeMap, SerializeSeq},
+    ser::SerializeMap,
     Deserialize, Serialize, Serializer,
 };
 
