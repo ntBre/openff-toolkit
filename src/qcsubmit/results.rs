@@ -59,22 +59,13 @@ impl ResultCollection {
     // `TorsionDriveResultCollection`s from files
     pub fn to_records(self) -> Vec<(Record, Molecule)> {
         let mut ret = Vec::new();
-        let _client = FractalClient::new();
-        for (_client_address, entries) in self.entries {
-            for entry in entries {
-                ret.push((
-                    Record {
-                        id: entry.record_id,
-                    },
-                    // TODO convert cmiles to smiles
-                    Molecule {
-                        atoms: Vec::new(),
-                        name: String::new(),
-                        smiles: entry.cmiles,
-                        conformers: Vec::new(),
-                    },
-                ));
-            }
+        let client = FractalClient::new();
+        let results = client.optimization_records(self, 400);
+        for (record, cmiles, geom) in results {
+            let mut molecule = Molecule::from_mapped_smiles(cmiles, true);
+            // TODO really taking here, shouldn't need clone
+            molecule.add_conformer(geom[0].clone());
+            ret.push((Record { id: record.id }, molecule));
         }
         ret
     }

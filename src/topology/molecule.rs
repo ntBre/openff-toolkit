@@ -38,6 +38,13 @@ impl Molecule {
         rdmol.into()
     }
 
+    pub fn from_mapped_smiles(
+        _smiles: Cmiles,
+        _allow_undefined_stereo: bool,
+    ) -> Self {
+        todo!()
+    }
+
     fn index(&self, atom: &Atom) -> Option<usize> {
         self.atoms.iter().position(|a| a == atom)
     }
@@ -57,6 +64,11 @@ impl Molecule {
         &self,
         _smarts: &str,
     ) -> Vec<ChemicalEnvironmentMatch> {
+        todo!()
+    }
+
+    pub(crate) fn add_conformer(&mut self, _geom: Vec<f64>) {
+        // naively this is self.conformers.push(_geom), but I'm not sure
         todo!()
     }
 }
