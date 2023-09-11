@@ -1,6 +1,6 @@
 use std::{collections::HashMap, str::FromStr};
 
-use crate::qcsubmit::results::TorsionDriveResultCollection;
+use crate::qcsubmit::results::ResultCollection;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -176,8 +176,8 @@ impl CollectionGetResponse {
     }
 }
 
-impl From<TorsionDriveResultCollection> for CollectionGetResponse {
-    fn from(value: TorsionDriveResultCollection) -> Self {
+impl From<ResultCollection> for CollectionGetResponse {
+    fn from(value: ResultCollection) -> Self {
         let mut records = HashMap::with_capacity(value.entries.len());
         for entries in value.entries.into_values() {
             for v in entries {

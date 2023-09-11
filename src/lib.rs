@@ -16,7 +16,7 @@ mod tests {
 
     use crate::{
         qcportal::models::TorsionDriveRecord,
-        qcsubmit::results::TorsionDriveResultCollection, smirnoff::ForceField,
+        qcsubmit::results::ResultCollection, smirnoff::ForceField,
         topology::molecule::Molecule,
     };
 
@@ -51,7 +51,7 @@ mod tests {
     }
 
     fn get_parameter_distribution(
-        dataset: TorsionDriveResultCollection,
+        dataset: ResultCollection,
         force_field: &ForceField,
         parameter_types: impl IntoIterator<Item = String> + Clone,
     ) -> HashMap<String, usize> {
@@ -68,7 +68,7 @@ mod tests {
 
     // TODO return some kind of Parameters type
     fn select_parameters<I>(
-        dataset: TorsionDriveResultCollection,
+        dataset: ResultCollection,
         force_field: &ForceField,
         parameter_types: I,
     ) -> HashMap<String, Vec<String>>
@@ -112,7 +112,7 @@ mod tests {
             "/home/brent/omsf/clone/sage-2.1.0/inputs-and-outputs/data-sets/",
         );
         let td = base.join("td-set-for-fitting-2.1.0.json");
-        let sage_td = TorsionDriveResultCollection::parse_file(td).unwrap();
+        let sage_td = ResultCollection::parse_file(td).unwrap();
         let ff = ForceField::load(
             "/home/brent/omsf/projects/valence-fitting/01_generate-forcefield/output/initial-force-field-openff-2.1.0.offxml",
         )

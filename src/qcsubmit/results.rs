@@ -40,7 +40,7 @@ impl Entry {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct TorsionDriveResultCollection {
+pub struct ResultCollection {
     pub entries: HashMap<String, Vec<Entry>>,
     pub provenance: Provenance,
 
@@ -48,7 +48,7 @@ pub struct TorsionDriveResultCollection {
     pub typ: String,
 }
 
-impl TorsionDriveResultCollection {
+impl ResultCollection {
     pub fn parse_file(path: impl AsRef<Path>) -> Result<Self, Box<dyn Error>> {
         let contents = read_to_string(path)?;
         let ret = serde_json::from_str(&contents)?;
@@ -100,15 +100,4 @@ impl TorsionDriveResultCollection {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
-}
-
-// TODO is there more to this? it's a straight copy paste right now? even worth
-// having?
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct OptimizationResultCollection {
-    pub entries: HashMap<String, Vec<Entry>>,
-    pub provenance: Provenance,
-
-    #[serde(rename = "type")]
-    pub typ: String,
 }

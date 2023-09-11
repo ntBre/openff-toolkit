@@ -19,8 +19,7 @@ mod procedure;
 #[cfg(test)]
 mod tests {
     use crate::qcsubmit::{
-        client::collection::CollectionType,
-        results::TorsionDriveResultCollection,
+        client::collection::CollectionType, results::ResultCollection,
     };
 
     use super::*;
@@ -108,8 +107,7 @@ mod tests {
 
         let client = FractalClient::new();
         let ds =
-            TorsionDriveResultCollection::parse_file("testfiles/core-opt.json")
-                .unwrap();
+            ResultCollection::parse_file("testfiles/core-opt.json").unwrap();
         let col: CollectionGetResponse = ds.into();
         let mut got = client.optimization_records(col, 400);
 
