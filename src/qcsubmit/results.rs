@@ -68,6 +68,7 @@ impl TorsionDriveResultCollection {
                         atoms: Vec::new(),
                         name: String::new(),
                         smiles: entry.cmiles,
+                        conformers: Vec::new(),
                     },
                 ));
             }

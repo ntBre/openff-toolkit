@@ -16,6 +16,7 @@ pub struct Molecule {
     pub atoms: Vec<Atom>,
     pub name: String,
     pub smiles: String,
+    pub conformers: Vec<Vec<f64>>,
 }
 
 impl From<RWMol> for Molecule {
