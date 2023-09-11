@@ -1,6 +1,4 @@
-use std::{collections::HashMap, path::Path};
-
-use rodeo::{AromaticityModel, RWMol};
+use std::collections::HashMap;
 
 use crate::qcsubmit::client::Cmiles;
 
@@ -21,20 +19,22 @@ pub struct Molecule {
     pub conformers: Vec<Vec<f64>>,
 }
 
-impl From<RWMol> for Molecule {
-    fn from(_value: RWMol) -> Self {
+#[cfg(feature = "rodeo")]
+impl From<rodeo::RWMol> for Molecule {
+    fn from(_value: rodeo::RWMol) -> Self {
         todo!()
     }
 }
 
 impl Molecule {
     /// load an SDF file
-    pub fn from_file(file: impl AsRef<Path>) -> Self {
-        let mut rdmol = RWMol::from_sdf(file);
+    #[cfg(feature = "rodeo")]
+    pub fn from_file(file: impl AsRef<std::path::Path>) -> Self {
+        let mut rdmol = rodeo::RWMol::from_sdf(file);
         use rodeo::SanitizeOptions as S;
         rdmol.sanitize(S::All ^ S::SetAromaticity ^ S::AdjustHs);
         rdmol.assign_stereochemistry_from_3d();
-        rdmol.set_aromaticity(AromaticityModel::MDL);
+        rdmol.set_aromaticity(rodeo::AromaticityModel::MDL);
         rdmol.into()
     }
 

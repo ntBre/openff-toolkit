@@ -43,6 +43,7 @@ impl Topology {
         Self { molecules }
     }
 
+    #[cfg(feature = "openmm")]
     pub fn from_openmm(
         _topology: &openmm::topology::Topology,
         _molecules: Vec<Molecule>,

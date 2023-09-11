@@ -663,6 +663,7 @@ pub struct Interchange {
 }
 
 impl Interchange {
+    #[cfg(feature = "openmm")]
     pub fn to_openmm_topology(self) -> openmm::topology::Topology {
         todo!();
     }
