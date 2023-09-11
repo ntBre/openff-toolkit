@@ -6,12 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-openmm = { version = "0.1.0", path = "../../../Projects/openmm", optional = true }
 quick-xml = { version = "0.29.0", features = ["serialize"] }
-rodeo = { version = "0.1.0", path = "../../../Projects/rodeo", optional = true }
+reqwest = { version = "0.11.20", features = ["blocking", "json"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.102"
-reqwest = { version = "0.11.20", features = ["blocking", "json"] }
+
+openmm = { version = "0.1.0", path = "../../../Projects/openmm", optional = true }
+rodeo = { version = "0.1.0", path = "../../../Projects/rodeo", optional = true }
 
 [features]
 openmm = ["dep:openmm"]
