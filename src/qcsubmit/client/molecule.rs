@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::Body;
 use serde::{Deserialize, Serialize};
 
@@ -59,6 +61,16 @@ pub struct Molecule {
     pub fix_orientation: bool,
     pub fix_symmetry: String,
     pub id: String,
+    extras: HashMap<String, String>,
+}
+
+impl Molecule {
+    pub fn cmiles(&self) -> String {
+        self.extras
+            .get("canonical_isomeric_explicit_hydrogen_mapped_smiles")
+            .unwrap()
+            .clone()
+    }
 }
 
 #[cfg(test)]
