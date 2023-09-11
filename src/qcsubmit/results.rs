@@ -11,6 +11,9 @@ use self::filters::Filters;
 
 pub mod filters;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Provenance {
     #[serde(rename = "applied-filters", default)]
@@ -106,22 +109,4 @@ pub struct OptimizationResultCollection {
 
     #[serde(rename = "type")]
     pub typ: String,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn load_filtered() {
-        let got = TorsionDriveResultCollection::parse_file(
-            "../../projects/valence-fitting/02_curate-data/datasets/\
-	     filtered-sage-td.json",
-        )
-        .unwrap();
-
-        insta::assert_debug_snapshot!(
-            serde_json::to_string_pretty(&got).unwrap()
-        );
-    }
 }
