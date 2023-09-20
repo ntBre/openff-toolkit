@@ -80,6 +80,10 @@ impl ResultCollection {
         None
     }
 
+    pub fn into_entries(self) -> impl Iterator<Item = Entry> {
+        self.entries.into_values().flatten()
+    }
+
     /// return the sum of lengths of `self.entries`
     pub fn len(&self) -> usize {
         self.entries.values().map(|v| v.len()).sum()
