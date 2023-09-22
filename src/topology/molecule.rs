@@ -66,11 +66,6 @@ impl Molecule {
     ) -> Vec<ChemicalEnvironmentMatch> {
         todo!()
     }
-
-    pub(crate) fn add_conformer(&mut self, _geom: Vec<f64>) {
-        // naively this is self.conformers.push(_geom), but I'm not sure
-        todo!()
-    }
 }
 
 type AtomMetadata = HashMap<String, String>;

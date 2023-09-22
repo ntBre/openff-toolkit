@@ -2,7 +2,8 @@ use std::{collections::HashMap, error::Error, fs::read_to_string, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{qcportal::models::Record, topology::molecule::Molecule};
+use crate::qcportal::models::Record;
+use ligand::molecule::Molecule;
 
 use self::filters::Filters;
 
@@ -53,19 +54,21 @@ impl ResultCollection {
         Ok(ret)
     }
 
-    // TODO this is supposed to have all kinds of wacky caching stuff and
-    // probably actually retrieving from qcarchive. for now just return what's
-    // in the hashmap, which I think should be correct for
-    // `TorsionDriveResultCollection`s from files
     pub fn to_records(self) -> Vec<(Record, Molecule)> {
         let mut ret = Vec::new();
         let client = FractalClient::new();
         let results = client.optimization_records(self, 400);
         for (record, cmiles, geom) in results {
-            let mut molecule = Molecule::from_mapped_smiles(cmiles, true);
+            let mut molecule = Molecule::from_mapped_smiles(&cmiles).unwrap();
             // TODO really taking here, shouldn't need clone
             molecule.add_conformer(geom[0].clone());
-            ret.push((Record { id: record.id }, molecule));
+            ret.push((
+                Record {
+                    id: record.id,
+                    energies: record.energies,
+                },
+                molecule,
+            ));
         }
         ret
     }
