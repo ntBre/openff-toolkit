@@ -16,8 +16,9 @@ mod tests {
 
     use crate::{
         qcportal::models::Record, qcsubmit::results::ResultCollection,
-        smirnoff::ForceField, topology::molecule::Molecule,
+        smirnoff::ForceField,
     };
+    use ligand::molecule::Molecule;
 
     fn label_and_tag_ids(
         (record, molecule): (Record, Molecule),
@@ -31,12 +32,7 @@ mod tests {
 
         for parameter_type in parameter_types.into_iter() {
             let parameter_labels = mol_labels[&parameter_type].clone();
-            let n_heavy_atoms = molecule
-                .atoms
-                .iter()
-                .filter(|&a| a.atomic_number != 1)
-                .count();
-
+            let n_heavy_atoms = 0; // TODO
             for (_indices, parameter) in parameter_labels {
                 parameter_ids.insert((
                     parameter,

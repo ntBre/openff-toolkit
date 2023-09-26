@@ -1,4 +1,4 @@
-use self::molecule::Molecule;
+use ligand::molecule::Molecule;
 
 pub mod molecule;
 
@@ -26,7 +26,7 @@ impl Topology {
 
     #[cfg(feature = "openmm")]
     pub fn from_openmm(
-        _topology: &openmm::topology::Topology,
+        _topology: &ligand::molecule::Topology,
         _molecules: Vec<Molecule>,
     ) -> Self {
         todo!();
