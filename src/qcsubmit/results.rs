@@ -58,10 +58,9 @@ impl ResultCollection {
         let mut ret = Vec::new();
         let client = FractalClient::new();
         let results = client.optimization_records(self, 400);
-        for (record, cmiles, geom) in results {
+        for (record, cmiles, mut geom) in results {
             let mut molecule = Molecule::from_mapped_smiles(&cmiles).unwrap();
-            // TODO really taking here, shouldn't need clone
-            molecule.add_conformer(geom[0].clone());
+            molecule.add_conformer(geom.swap_remove(0));
             ret.push((
                 Record {
                     id: record.id,
