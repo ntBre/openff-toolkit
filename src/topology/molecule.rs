@@ -1,8 +1,38 @@
-use std::collections::HashMap;
+use std::{clone::Clone, collections::HashMap};
+
+use pyo3::{types::PyModule, FromPyObject, PyResult, Python};
 
 use crate::qcsubmit::client::Cmiles;
 
 use super::{ChemicalEnvironmentMatch, Topology};
+
+/// extract a simple field name from a Python object
+#[inline]
+fn extractor<'source, T: FromPyObject<'source>>(
+    ob: &'source pyo3::PyAny,
+    field: &'static str,
+) -> T {
+    ob.getattr(field).unwrap().extract::<T>().unwrap()
+}
+
+fn extract_conformers<'source>(
+    ob: &'source pyo3::PyAny,
+) -> PyResult<Vec<Vec<f64>>> {
+    Python::with_gil(|py| {
+        let flatten = PyModule::from_code(
+            py,
+            "def flatten(array):
+    import numpy as np
+    return [a.magnitude.flatten().tolist() for a in array]",
+            "",
+            "",
+        )
+        .unwrap()
+        .getattr("flatten")
+        .unwrap();
+        Ok(flatten.call1((ob,)).unwrap().extract().unwrap())
+    })
+}
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Stereochemistry {
@@ -11,12 +41,22 @@ pub enum Stereochemistry {
     None,
 }
 
-#[derive(Clone, PartialEq)]
+impl<'source> FromPyObject<'source> for Stereochemistry {
+    fn extract(ob: &'source pyo3::PyAny) -> pyo3::PyResult<Self> {
+        match ob.getattr("stereochemistry") {
+            Ok(_) => todo!(),
+            Err(_) => Ok(Stereochemistry::None),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, FromPyObject)]
 pub struct Molecule {
-    pub atoms: Vec<Atom>,
     pub name: String,
-    pub smiles: String,
+    #[pyo3(from_py_with = "extract_conformers")]
     pub conformers: Vec<Vec<f64>>,
+    #[pyo3(attribute("atoms"))]
+    pub atoms: Vec<Atom>,
 }
 
 #[cfg(feature = "rodeo")]
@@ -28,14 +68,9 @@ impl From<rodeo::RWMol> for Molecule {
 
 impl Molecule {
     /// load an SDF file
-    #[cfg(feature = "rodeo")]
     pub fn from_file(file: impl AsRef<std::path::Path>) -> Self {
-        let mut rdmol = rodeo::RWMol::from_sdf(file);
-        use rodeo::SanitizeOptions as S;
-        rdmol.sanitize(S::All ^ S::SetAromaticity ^ S::AdjustHs);
-        rdmol.assign_stereochemistry_from_3d();
-        rdmol.set_aromaticity(rodeo::AromaticityModel::MDL);
-        rdmol.into()
+        let mol = ligand::molecule::Molecule::from_file(file).unwrap();
+        Python::with_gil(|py| mol.inner.extract(py).unwrap())
     }
 
     pub fn from_mapped_smiles(
@@ -43,10 +78,6 @@ impl Molecule {
         _allow_undefined_stereo: bool,
     ) -> Self {
         todo!()
-    }
-
-    fn index(&self, atom: &Atom) -> Option<usize> {
-        self.atoms.iter().position(|a| a == atom)
     }
 
     pub fn to_topology(self) -> Topology {
@@ -67,8 +98,6 @@ impl Molecule {
         todo!()
     }
 }
-
-type AtomMetadata = HashMap<String, String>;
 
 #[allow(unused)]
 enum Unit {
@@ -104,13 +133,30 @@ pub struct Atom {
     formal_charge: isize,
     is_aromatic: bool,
     name: Option<String>,
-    molecule: Option<Molecule>,
     stereochemistry: Stereochemistry,
-    metadata: Option<AtomMetadata>,
 
     // computed properties
     bonds: Vec<Bond>,
     molecule_atom_index: Option<usize>,
+}
+
+impl<'source> FromPyObject<'source> for Atom {
+    fn extract(ob: &'source pyo3::PyAny) -> pyo3::PyResult<Self> {
+        let atomic_number = extractor(ob, "atomic_number");
+        // quantity-wrapped but unit is elementary charge
+        let formal_charge =
+            extractor(ob.getattr("formal_charge").unwrap(), "magnitude");
+        let is_aromatic = extractor(ob, "is_aromatic");
+        Ok(Self {
+            atomic_number,
+            formal_charge,
+            is_aromatic,
+            name: extractor(ob, "name"),
+            molecule_atom_index: extractor(ob, "molecule_atom_index"),
+            bonds: extractor(ob, "bonds"),
+            stereochemistry: extractor(ob, "stereochemistry"),
+        })
+    }
 }
 
 #[allow(unused)]
@@ -120,18 +166,14 @@ impl Atom {
         formal_charge: isize,
         is_aromatic: bool,
         name: Option<String>,
-        molecule: Option<Molecule>,
         stereochemistry: Stereochemistry,
-        metadata: Option<AtomMetadata>,
     ) -> Self {
         Self {
             atomic_number,
             formal_charge,
             is_aromatic,
             name,
-            molecule,
             stereochemistry,
-            metadata,
             bonds: Vec::new(),
             molecule_atom_index: None,
         }
@@ -139,10 +181,6 @@ impl Atom {
 
     fn add_bond(&mut self, bond: Bond) {
         self.bonds.push(bond);
-    }
-
-    fn metadata(&self) -> Option<&AtomMetadata> {
-        self.metadata.as_ref()
     }
 
     fn formal_charge(&self) -> isize {
@@ -238,107 +276,31 @@ impl Atom {
         &self.bonds
     }
 
-    fn bonded_atoms(&self) -> Vec<Self> {
-        let mut ret = Vec::new();
-        for bond in &self.bonds {
-            for atom in &bond.atoms {
-                if atom != self {
-                    ret.push(atom.clone());
-                }
-            }
-        }
-        ret
-    }
-
-    fn is_bonded_to(&self, other: &Self) -> bool {
-        for bond in &self.bonds {
-            for bonded_atom in &bond.atoms {
-                if other == bonded_atom {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
     /// TODO potentially difficult. calls out to
     /// openff.toolkit.utils.toolkits.ToolkitRegistry to compute
     fn is_in_ring(&self) -> bool {
         todo!()
     }
-
-    /// panics if `self` does not belong to a molecule
-    fn molecule_atom_index(&mut self) -> Option<usize> {
-        // TODO I don't like this panic but that's what the python does
-        let Some(mol) = &self.molecule else {
-            panic!("This Atom does not belong to a Molecule");
-        };
-        // this looks weird, but we need to compute it if it's not
-        // already set
-        if self.molecule_atom_index.is_some() {
-            return self.molecule_atom_index;
-        }
-        let idx = mol.index(self);
-        self.molecule_atom_index = idx;
-        idx
-    }
 }
 
-impl Particle for Atom {
-    fn molecule(&self) -> Option<&Molecule> {
-        self.molecule.as_ref()
-    }
-
-    fn set_molecule(&mut self, molecule: Molecule) {
-        self.molecule = Some(molecule);
-    }
-
-    fn molecule_particle_index(&self) -> Option<usize> {
-        if let Some(mol) = &self.molecule {
-            mol.index(self)
-        } else {
-            None
-        }
-    }
-
-    fn name(&self) -> Option<&String> {
-        self.name.as_ref()
-    }
-}
-
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, FromPyObject)]
 struct Bond {
-    atom1: Atom,
-    atom2: Atom,
+    atom1_index: usize,
+    atom2_index: usize,
     bond_order: usize,
     is_aromatic: bool,
     fractional_bond_order: Option<f64>,
     stereochemistry: Stereochemistry,
-    atoms: Vec<Atom>,
 }
 
-impl Bond {
-    #[allow(unused)]
-    fn new(
-        atom1: Atom,
-        atom2: Atom,
-        bond_order: usize,
-        is_aromatic: bool,
-        fractional_bond_order: Option<f64>,
-        stereochemistry: Stereochemistry,
-        atoms: Vec<Atom>,
-    ) -> Self {
-        let mut ret = Self {
-            atom1,
-            atom2,
-            bond_order,
-            is_aromatic,
-            fractional_bond_order,
-            stereochemistry,
-            atoms,
-        };
-        ret.atom1.add_bond(ret.clone());
-        ret.atom2.add_bond(ret.clone());
-        ret
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_file() {
+        Molecule::from_file(
+            "/home/brent/omsf/rust/anakin/targets/torsion-18535805/input.sdf",
+        );
     }
 }

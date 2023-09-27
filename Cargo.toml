@@ -11,6 +11,7 @@ reqwest = { version = "0.11.20", features = ["blocking", "json"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.102"
 ligand = { path = "../ligand" }
+pyo3 = { version = "0.19.2", features = ["auto-initialize"] }
 
 openmm = { version = "0.1.0", path = "../../../Projects/openmm", optional = true }
 rodeo = { version = "0.1.0", path = "../../../Projects/rodeo", optional = true }
