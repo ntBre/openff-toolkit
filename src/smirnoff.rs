@@ -686,7 +686,11 @@ impl Interchange {
 
     #[cfg(feature = "openmm")]
     fn to_openmm(self) -> openmm::system::System {
-        todo!();
+        use openmm::system::System as Sys;
+        let mut ret = Sys::new();
+        // TODO this is going to crash when you try to use the System because
+        // there are no particles in it
+        ret
     }
 
     fn from_smirnoff(forcefield: &ForceField, topology: Topology) -> Self {
