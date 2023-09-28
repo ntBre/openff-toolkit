@@ -663,7 +663,7 @@ impl ForceField {
     }
 }
 
-#[derive(Default)]
+#[allow(unused)]
 pub struct Interchange {
     pub virtual_sites: Vec<()>,
 
@@ -672,6 +672,9 @@ pub struct Interchange {
 
     /// periodic box
     box_: Option<()>,
+
+    forcefield: ForceField,
+    topology: Topology,
 }
 
 #[allow(unused)]
@@ -689,24 +692,30 @@ impl Interchange {
     fn from_smirnoff(forcefield: &ForceField, topology: Topology) -> Self {
         // let mut _system = openmm::system::System::new();
         // todo!("initialize system with particles");
-        let mut interchange = Interchange::default();
-        // let topology = Self::validate_topology(topology);
-        interchange.positions = Self::infer_positions(&topology);
-        interchange.box_ = None;
+        // let mut interchange = Interchange::default();
+        // // let topology = Self::validate_topology(topology);
+        // interchange.positions = Self::infer_positions(&topology);
+        // interchange.box_ = None;
 
         // skipping plugins
-        interchange.bonds(forcefield, &topology);
-        interchange.constraints(forcefield, &topology);
-        interchange.angles(forcefield, &topology);
-        interchange.propers(forcefield, &topology);
-        interchange.impropers(forcefield, &topology);
-        interchange.vdw(forcefield, &topology);
-        interchange.electrostatics(forcefield, &topology);
-        interchange.virtual_sites(forcefield, &topology);
-        interchange.gbsa(forcefield, &topology);
+        // interchange.bonds(forcefield, &topology);
+        // interchange.constraints(forcefield, &topology);
+        // interchange.angles(forcefield, &topology);
+        // interchange.propers(forcefield, &topology);
+        // interchange.impropers(forcefield, &topology);
+        // interchange.vdw(forcefield, &topology);
+        // interchange.electrostatics(forcefield, &topology);
+        // interchange.virtual_sites(forcefield, &topology);
+        // interchange.gbsa(forcefield, &topology);
 
         // TODO might need to store topology on self too
-        todo!();
+        Self {
+            virtual_sites: Vec::new(),
+            positions: Vec::new(),
+            box_: None,
+            forcefield: forcefield.clone(),
+            topology,
+        }
     }
 
     fn infer_positions(topology: &Topology) -> Vec<Vec<f64>> {
