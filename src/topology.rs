@@ -46,9 +46,45 @@ impl Topology {
     #[cfg(feature = "openmm")]
     pub fn from_openmm(
         _topology: &openmm::topology::Topology,
-        _molecules: Vec<Molecule>,
+        molecules: Vec<Molecule>,
     ) -> Self {
-        todo!();
+        // my Topology doesn't actually do anything, so just skip all of this
+        // work
+
+        // use torx::Graph;
+
+        // let mut omm_has_bond_orders = true;
+        // for omm_bond in topology.bonds() {
+        //     // NOTE we don't set bond orders anywhere in openmm so this is
+        //     // always true:
+        //     // if omm_bond.order.is_none() {
+        //     if true {
+        //         omm_has_bond_orders = false;
+        //     }
+        // }
+
+        // let mut graphs = HashMap::new();
+        // for mol in molecules {
+        //     let graph = Graph::from(mol.clone());
+        //     for existing_graph in graphs.keys() {
+        //         if graph.is_isomorphic(existing_graph) {
+        //             panic!("duplicate molecule error");
+        //         }
+        //     }
+        //     graphs.insert(graph, mol);
+        // }
+
+        // // might have to define this as a function rather than a From impl
+        // // depending on where Graph is defined
+        // let top_graph = Graph::from(topology.clone());
+        // let mut mols_to_add = Vec::new();
+        // // this is supposed to be some connected_components and subgraph stuff,
+        // // but we'll see if we can just iterate over nodes
+        // for omm_mol_g in top_graph.nodes() {
+        //     let mut match_found = false;
+        // }
+
+        Self { molecules }
     }
 
     pub(crate) fn chemical_environment_matches(

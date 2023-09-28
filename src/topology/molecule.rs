@@ -1,6 +1,7 @@
 use std::{clone::Clone, collections::HashMap};
 
 use pyo3::{types::PyModule, FromPyObject, PyResult, Python};
+use torx::Graph;
 
 use crate::qcsubmit::client::Cmiles;
 
@@ -57,12 +58,27 @@ pub struct Molecule {
     pub conformers: Vec<Vec<f64>>,
     #[pyo3(attribute("atoms"))]
     pub atoms: Vec<Atom>,
+    pub bonds: Vec<Bond>,
 }
 
 #[cfg(feature = "rodeo")]
 impl From<rodeo::RWMol> for Molecule {
     fn from(_value: rodeo::RWMol) -> Self {
         todo!()
+    }
+}
+
+impl From<Molecule> for Graph {
+    fn from(value: Molecule) -> Self {
+        let mut g = Graph::new();
+        for atom in value.atoms {
+            g.add_node(atom.molecule_atom_index.unwrap());
+        }
+
+        for bond in value.bonds {
+            g.add_edge(bond.atom1_index, bond.atom2_index);
+        }
+        g
     }
 }
 
@@ -284,7 +300,7 @@ impl Atom {
 }
 
 #[derive(Clone, PartialEq, FromPyObject)]
-struct Bond {
+pub struct Bond {
     atom1_index: usize,
     atom2_index: usize,
     bond_order: usize,

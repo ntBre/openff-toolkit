@@ -653,19 +653,105 @@ impl ForceField {
         molecule_labels
     }
 
-    pub fn create_interchange(&self, _topology: &Topology) -> Interchange {
-        todo!();
+    pub fn create_interchange(&self, topology: Topology) -> Interchange {
+        Interchange::from_smirnoff(self, topology)
+    }
+
+    #[cfg(feature = "openmm")]
+    pub fn create_system(&self, topology: Topology) -> openmm::system::System {
+        self.create_interchange(topology).to_openmm()
     }
 }
 
+#[derive(Default)]
 pub struct Interchange {
     pub virtual_sites: Vec<()>,
+
+    /// flattened vector of atomic coordinates, one entry per molecule
+    positions: Vec<Vec<f64>>,
+
+    /// periodic box
+    box_: Option<()>,
 }
 
+#[allow(unused)]
 impl Interchange {
     #[cfg(feature = "openmm")]
     pub fn to_openmm_topology(self) -> openmm::topology::Topology {
         todo!();
+    }
+
+    #[cfg(feature = "openmm")]
+    fn to_openmm(self) -> openmm::system::System {
+        todo!();
+    }
+
+    fn from_smirnoff(forcefield: &ForceField, topology: Topology) -> Self {
+        // let mut _system = openmm::system::System::new();
+        // todo!("initialize system with particles");
+        let mut interchange = Interchange::default();
+        // let topology = Self::validate_topology(topology);
+        interchange.positions = Self::infer_positions(&topology);
+        interchange.box_ = None;
+
+        // skipping plugins
+        interchange.bonds(forcefield, &topology);
+        interchange.constraints(forcefield, &topology);
+        interchange.angles(forcefield, &topology);
+        interchange.propers(forcefield, &topology);
+        interchange.impropers(forcefield, &topology);
+        interchange.vdw(forcefield, &topology);
+        interchange.electrostatics(forcefield, &topology);
+        interchange.virtual_sites(forcefield, &topology);
+        interchange.gbsa(forcefield, &topology);
+
+        // TODO might need to store topology on self too
+        todo!();
+    }
+
+    fn infer_positions(topology: &Topology) -> Vec<Vec<f64>> {
+        topology
+            .molecules
+            .iter()
+            .cloned()
+            .map(|mut mol| mol.conformers.swap_remove(0))
+            .collect()
+    }
+
+    fn bonds(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn constraints(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn angles(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn propers(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn impropers(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn vdw(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn electrostatics(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn virtual_sites(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
+    }
+
+    fn gbsa(&mut self, forcefield: &ForceField, topology: &Topology) {
+        todo!()
     }
 }
 
